@@ -1,0 +1,14 @@
+{
+  "low": true,
+  "moderate": true,
+  "high": true,
+  "critical": true,
+  "allowlist": [
+    "GHSA-xxxx-xxxx-xxxx",  # Replace with actual vulnerability IDs
+    "CVE-2023-xxxx"         # Replace with actual CVE numbers
+  ],
+  "skip-dev": false,
+  "report-type": "summary",
+  "output-format": "text",
+  "pass-enoaudit": true
+}
