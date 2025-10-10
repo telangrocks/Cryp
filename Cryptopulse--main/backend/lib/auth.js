@@ -6,7 +6,7 @@
 const jwt = require('jsonwebtoken');
 const { hash, compare } = require('@node-rs/bcrypt');
 const crypto = require('crypto');
-const logger = require('./logging');
+const { logger } = require('./logging');
 
 // JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET;
