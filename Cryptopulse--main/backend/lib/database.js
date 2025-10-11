@@ -24,14 +24,24 @@ const initPostgreSQL = async() => {
 
     // Parse DATABASE_URL to handle SSL properly
     const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Remove sslmode from connection string and handle it via ssl config
+    const cleanConnectionString = connectionString.replace(/[?&]sslmode=\w+/g, '');
+    
+    // Comprehensive SSL configuration for Render.com and other providers
     const sslConfig = isProduction ? {
       rejectUnauthorized: false,
-      // Required for Render.com PostgreSQL
-      checkServerIdentity: () => undefined
+      checkServerIdentity: () => undefined,
+      // Additional SSL options for compatibility
+      servername: undefined,
+      // Disable certificate validation entirely for Render
+      ca: undefined,
+      cert: undefined,
+      key: undefined
     } : false;
 
     postgresPool = new Pool({
-      connectionString,
+      connectionString: cleanConnectionString,
       ssl: sslConfig,
       max: 25, // Increased for production
       min: 3, // Increased minimum connections
