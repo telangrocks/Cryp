@@ -61,7 +61,12 @@ const logFormat = winston.format.combine(
       logEntry.spanId = meta.spanId;
     }
 
-    return JSON.stringify(logEntry);
+    return JSON.stringify(logEntry, (key, value) => {
+      if (key === 'req' || key === 'res' || key === 'socket' || key === 'connection') {
+        return '[Circular Reference]';
+      }
+      return value;
+    });
   })
 );
 

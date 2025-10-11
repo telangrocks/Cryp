@@ -83,23 +83,8 @@ for (const envFile of envFiles) {
 // Import environment validation
 const env = require('./lib/envValidation');
 
-// Configure logger
-const logger = winston.createLogger({
-  level: env.LOG_LEVEL,
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
-});
+// Import logger from logging module
+const { logger } = require('./lib/logging');
 
 // Log environment loading status
 if (envLoaded) {
