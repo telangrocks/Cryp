@@ -26,7 +26,7 @@ class TradingBot {
       signalConfidenceThreshold: 75,
       riskPerTrade: 0.02, // 2% of portfolio per trade
       maxDrawdown: 0.1, // 10% max drawdown
-      checkInterval: 30000, // 30 seconds
+      checkInterval: 60000, // 60 seconds for free tier
       backtestPeriod: 30 // days
     };
 

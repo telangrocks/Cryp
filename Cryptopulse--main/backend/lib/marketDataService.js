@@ -355,7 +355,7 @@ class MarketDataService {
       } catch (error) {
         logger.error('Data collection error:', error);
       }
-    }, 30000); // Increased interval to 30 seconds
+    }, 60000); // Increased interval to 60 seconds for free tier
 
     // Start WebSocket connections
     this.startWebSocketConnections();

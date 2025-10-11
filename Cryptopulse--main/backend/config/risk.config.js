@@ -99,25 +99,25 @@ const config = {
       circuitBreakerThreshold: 0.12,
       circuitBreakerTimeout: 3600000, // 1 hour
       circuitBreakerMaxFailures: 3,
-      maxMemoryUsage: 0.8,
-      maxCpuUsage: 0.8,
-      maxConnections: 100,
-      maxRequestsPerMinute: 1000,
+      maxMemoryUsage: 0.95, // 95% for Render free tier (512MB)
+      maxCpuUsage: 0.95, // 95% for Render free tier (shared CPU)
+      maxConnections: 50, // Reduced for free tier
+      maxRequestsPerMinute: 500, // Reduced for free tier
       anomalyThreshold: 3.0,
       suspiciousActivityThreshold: 10,
       maxFailedAttempts: 5,
       lockoutDuration: 300000, // 5 minutes
     },
     monitoring: {
-      riskMonitoringInterval: 30000, // 30 seconds
-      resourceMonitoringInterval: 20000, // 20 seconds
-      threatDetectionInterval: 60000, // 1 minute
-      circuitBreakerMonitoringInterval: 5000, // 5 seconds
+      riskMonitoringInterval: 60000, // 1 minute (reduced frequency)
+      resourceMonitoringInterval: 60000, // 1 minute (reduced frequency)
+      threatDetectionInterval: 120000, // 2 minutes (reduced frequency)
+      circuitBreakerMonitoringInterval: 10000, // 10 seconds
     },
     logging: {
       level: 'warn',
       enableDetailedLogging: false,
-      enablePerformanceLogging: true,
+      enablePerformanceLogging: false, // Disabled for free tier
     },
   },
 };

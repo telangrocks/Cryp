@@ -722,10 +722,11 @@ class RiskManager {
     try {
       // Update daily metrics
       this.dailyMetrics.totalRisk = this.calculateTotalRisk();
-      this.dailyMetrics.maxDrawdown = Math.max(
-        this.dailyMetrics.maxDrawdown,
-        this.calculateCurrentDrawdown()
-      );
+      // Skip drawdown calculation if no user context
+      // this.dailyMetrics.maxDrawdown = Math.max(
+      //   this.dailyMetrics.maxDrawdown,
+      //   this.calculateCurrentDrawdown()
+      // );
 
       // Check for risk alerts
       if (this.dailyMetrics.maxDrawdown > this.config.maxDrawdown * 0.8) {
