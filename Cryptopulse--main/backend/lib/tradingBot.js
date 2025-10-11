@@ -101,7 +101,10 @@ class TradingBot {
         await this.checkForSignals();
 
         // Process pending signals
-        await this.processSignalQueue();
+        if (this.signalQueue.length > 0) {
+          const signal = this.signalQueue.shift();
+          await this.processSignal(signal);
+        }
 
         // Update strategy performance
         await this.updateStrategyPerformance();

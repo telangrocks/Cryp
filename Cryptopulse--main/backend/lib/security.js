@@ -8,7 +8,7 @@ const slowDown = require('express-slow-down');
 const { body, validationResult } = require('express-validator');
 const compression = require('compression');
 const helmet = require('helmet');
-const logger = require('./logging');
+const { logger } = require('./logging');
 const cors = require('cors');
 // Note: csurf is deprecated, using custom CSRF implementation
 // const csrf = require('csurf');

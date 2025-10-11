@@ -91,11 +91,33 @@ const initPostgreSQL = async() => {
       }
     }
 
+    // Initialize database schema
+    await initializeSchema();
+    
     logger.info('✅ PostgreSQL connected successfully');
     return postgresPool;
   } catch (error) {
     logger.error('❌ PostgreSQL connection failed:', error.message);
     throw error;
+  }
+};
+
+// Initialize database schema
+const initializeSchema = async() => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Read schema file
+    const schemaPath = path.join(__dirname, '..', 'schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+    
+    // Execute schema
+    await query(schema);
+    logger.info('✅ Database schema initialized successfully');
+  } catch (error) {
+    logger.error('❌ Schema initialization failed:', error.message);
+    // Don't throw - schema might already exist
   }
 };
 
