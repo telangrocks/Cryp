@@ -86,6 +86,8 @@ const env = require('./lib/envValidation');
 // Import logger from logging module
 const { logger } = require('./lib/logging');
 
+// Backend deployment test - automated setup
+
 // Log environment loading status
 if (envLoaded) {
   logger.info('✅ Environment variables loaded successfully');
