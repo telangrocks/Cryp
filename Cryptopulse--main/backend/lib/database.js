@@ -6,7 +6,7 @@
 const { Pool } = require('pg');
 const { MongoClient } = require('mongodb');
 const Redis = require('redis');
-const logger = require('./logging');
+const { logger } = require('./logging');
 
 // Database connections
 let postgresPool = null;

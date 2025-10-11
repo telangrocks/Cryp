@@ -62,7 +62,13 @@ const logFormat = winston.format.combine(
     }
 
     return JSON.stringify(logEntry, (key, value) => {
-      if (key === 'req' || key === 'res' || key === 'socket' || key === 'connection') {
+      if (key === 'req' || key === 'res' || key === 'socket' || key === 'connection' || 
+          key === '_redirectable' || key === '_currentRequest' || 
+          key === 'request' || key === 'response' ||
+          (value && typeof value === 'object' && value.constructor && 
+           (value.constructor.name === 'ClientRequest' || 
+            value.constructor.name === 'IncomingMessage' ||
+            value.constructor.name === 'RedirectableRequest'))) {
         return '[Circular Reference]';
       }
       return value;
