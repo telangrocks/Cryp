@@ -22,9 +22,17 @@ const initPostgreSQL = async() => {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
+    // Parse DATABASE_URL to handle SSL properly
+    const isProduction = process.env.NODE_ENV === 'production';
+    const sslConfig = isProduction ? {
+      rejectUnauthorized: false,
+      // Required for Render.com PostgreSQL
+      checkServerIdentity: () => undefined
+    } : false;
+
     postgresPool = new Pool({
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      ssl: sslConfig,
       max: 25, // Increased for production
       min: 3, // Increased minimum connections
       idleTimeoutMillis: 20000, // Reduced for better resource management
