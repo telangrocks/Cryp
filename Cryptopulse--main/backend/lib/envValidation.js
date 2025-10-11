@@ -337,8 +337,8 @@ if (env.NODE_ENV === 'production') {
   }
 
   // Check for sandbox mode in production
-  if (env.CASHFREE_MODE === 'sandbox') {
-    productionWarnings.push('CASHFREE_MODE is set to sandbox in production');
+  if (env.CASHFREE_ENV === 'sandbox') {
+    productionWarnings.push('CASHFREE_ENV is set to sandbox in production');
   }
 
   // Check for debug mode in production
