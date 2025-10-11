@@ -822,8 +822,12 @@ class RiskManager {
   async calculateCurrentDrawdown(userId) {
     try {
       const user = await User.findById(userId);
-      const peakValue = user.peakPortfolioValue || user.portfolioValue;
-      const currentValue = user.portfolioValue;
+      if (!user) {
+        logger.warn(`User not found for drawdown calculation: ${userId}`);
+        return { currentDrawdown: 0, peakValue: 0, currentValue: 0 };
+      }
+      const peakValue = user.peakPortfolioValue || user.portfolioValue || 0;
+      const currentValue = user.portfolioValue || 0;
       
       if (currentValue >= peakValue) {
         await User.updatePeakValue(userId, currentValue);

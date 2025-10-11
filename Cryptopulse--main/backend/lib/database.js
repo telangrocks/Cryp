@@ -506,6 +506,21 @@ const Trade = {
   `;
     const result = await query(queryText, [exchange, limit, offset]);
     return result.rows;
+  },
+
+  async findActive(userId = null) {
+    let queryText = 'SELECT * FROM trades WHERE status IN ($1, $2)';
+    let values = ['pending', 'open'];
+    
+    if (userId) {
+      queryText += ' AND user_id = $3';
+      values.push(userId);
+    }
+    
+    queryText += ' ORDER BY created_at DESC';
+    
+    const result = await query(queryText, values);
+    return result.rows;
   }
 };
 

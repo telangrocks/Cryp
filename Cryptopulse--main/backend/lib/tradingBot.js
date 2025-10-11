@@ -95,28 +95,35 @@ class TradingBot {
 
   // Main trading loop
   async tradingLoop() {
+    let iterationCount = 0;
+    
     while (this.isRunning) {
       try {
-        // Check for new signals
-        await this.checkForSignals();
-
-        // Process pending signals
+        // Process pending signals (always do this)
         if (this.signalQueue.length > 0) {
           const signal = this.signalQueue.shift();
           await this.processSignal(signal);
         }
 
-        // Update strategy performance
-        await this.updateStrategyPerformance();
+        // Only do expensive operations every 5 iterations (2.5 minutes)
+        if (iterationCount % 5 === 0) {
+          // Check for new signals
+          await this.checkForSignals();
+          
+          // Update strategy performance
+          await this.updateStrategyPerformance();
+          
+          // Risk management checks
+          await this.performRiskChecks();
+        }
 
-        // Risk management checks
-        await this.performRiskChecks();
-
+        iterationCount++;
+        
         // Wait before next iteration
         await new Promise(resolve => setTimeout(resolve, this.config.checkInterval));
       } catch (error) {
         logger.error('Trading loop error:', error);
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds on error
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds on error
       }
     }
   }
