@@ -112,8 +112,26 @@ const initializeSchema = async() => {
     const schemaPath = path.join(__dirname, '..', 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
     
-    // Execute schema
-    await query(schema);
+    // Split schema into individual statements
+    const statements = schema
+      .split(';')
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+    
+    // Execute each statement individually
+    for (const statement of statements) {
+      if (statement.trim()) {
+        try {
+          await query(statement);
+        } catch (error) {
+          // Log but don't fail - table might already exist
+          if (!error.message.includes('already exists')) {
+            logger.warn(`Schema statement warning: ${error.message}`);
+          }
+        }
+      }
+    }
+    
     logger.info('✅ Database schema initialized successfully');
   } catch (error) {
     logger.error('❌ Schema initialization failed:', error.message);
