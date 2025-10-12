@@ -69,27 +69,50 @@ const commonVars = {
   COINBASE_SECRET_KEY: '',
   COINBASE_PASSPHRASE: '',
 
-  // Payment Configuration
-  CASHFREE_APP_ID: '',
+  // Payment Configuration (align with validator)
+  CASHFREE_CLIENT_ID: '',
   CASHFREE_SECRET_KEY: '',
+  CASHFREE_ENV: 'sandbox',
   CASHFREE_WEBHOOK_SECRET: '',
-  CASHFREE_MODE: 'sandbox',
+  CASHFREE_BASE_URL: 'https://sandbox.cashfree.com',
+
+  // Cache
+  REDIS_URL: '',
+  MONGODB_URL: '',
+
+  // URLs & CORS
+  FRONTEND_URL: '',
+  BACKEND_URL: '',
+  ALLOWED_ORIGINS: '',
+  CORS_ORIGIN: '',
 
   // Monitoring
   SLACK_WEBHOOK_URL: '',
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: '900000',
+  RATE_LIMIT_MAX_REQUESTS: '100',
 
   // Feature Flags
   ENABLE_ANALYTICS: 'true',
+  ENABLE_DEBUG: 'false',
+  ENABLE_MOCK_DATA: 'false',
 
   // Security Features
   ENABLE_CSRF_PROTECTION: 'true',
   ENABLE_RATE_LIMITING: 'true',
   ENABLE_CORS: 'true',
 
+  // WebSockets
+  WEBSOCKET_ENABLED: 'true',
+  WEBSOCKET_PORT: '8080',
+  WEBSOCKET_MAX_CONNECTIONS: '1000',
+  WEBSOCKET_MESSAGE_RATE_LIMIT: '100',
+  WEBSOCKET_HEARTBEAT_INTERVAL: '30000',
+  WEBSOCKET_MAX_MESSAGE_SIZE: '1048576',
+
   // HTTPS
+  HTTPS_ENABLED: 'false',
   SSL_CERT_PATH: '',
   SSL_KEY_PATH: ''
 };
@@ -145,12 +168,18 @@ function generateEnvContent(env, isProduction = false) {
 
   // Cache
   content += '# Cache Configuration\n';
-  content += `REDIS_URL=${config.REDIS_URL}\n\n`;
+  content += `REDIS_URL=${config.REDIS_URL}\n`;
+  content += `MONGODB_URL=${config.MONGODB_URL}\n\n`;
 
   // URLs
   content += '# URLs\n';
   content += `FRONTEND_URL=${config.FRONTEND_URL}\n`;
   content += `BACKEND_URL=${config.BACKEND_URL}\n\n`;
+
+  // CORS Configuration
+  content += '# CORS Configuration\n';
+  content += `ALLOWED_ORIGINS=${config.ALLOWED_ORIGINS}\n`;
+  content += `CORS_ORIGIN=${config.CORS_ORIGIN}\n\n`;
 
   // Monitoring & Logging
   content += '# Monitoring & Logging\n';
@@ -173,6 +202,15 @@ function generateEnvContent(env, isProduction = false) {
   content += `ENABLE_CSRF_PROTECTION=${config.ENABLE_CSRF_PROTECTION}\n`;
   content += `ENABLE_RATE_LIMITING=${config.ENABLE_RATE_LIMITING}\n`;
   content += `ENABLE_CORS=${config.ENABLE_CORS}\n\n`;
+
+  // WebSocket Configuration
+  content += '# WebSocket Configuration\n';
+  content += `WEBSOCKET_ENABLED=${config.WEBSOCKET_ENABLED}\n`;
+  content += `WEBSOCKET_PORT=${config.WEBSOCKET_PORT}\n`;
+  content += `WEBSOCKET_MAX_CONNECTIONS=${config.WEBSOCKET_MAX_CONNECTIONS}\n`;
+  content += `WEBSOCKET_MESSAGE_RATE_LIMIT=${config.WEBSOCKET_MESSAGE_RATE_LIMIT}\n`;
+  content += `WEBSOCKET_HEARTBEAT_INTERVAL=${config.WEBSOCKET_HEARTBEAT_INTERVAL}\n`;
+  content += `WEBSOCKET_MAX_MESSAGE_SIZE=${config.WEBSOCKET_MAX_MESSAGE_SIZE}\n\n`;
 
   // HTTPS Configuration
   content += '# HTTPS Configuration\n';
