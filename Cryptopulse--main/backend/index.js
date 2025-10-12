@@ -152,27 +152,33 @@ app.use(validateInput);
 // Basic health check
 app.get('/health', async(req, res) => {
   try {
-  // Check database connectivity
-    let dbStatus = 'Connected';
+    // Check database connectivity (handle if not initialized)
+    let dbStatus = 'Not Configured';
     try {
-      await query('SELECT 1');
+      if (typeof query === 'function') {
+        await query('SELECT 1');
+        dbStatus = 'Connected';
+      }
     } catch (error) {
       dbStatus = 'Disconnected';
-      logger.error('Database health check failed:', error.message);
+      logger.warn('Database health check failed:', error.message);
     }
 
-    // Check Redis connectivity
-    let redisStatus = 'Connected';
+    // Check Redis connectivity (handle if not initialized)
+    let redisStatus = 'Not Configured';
     try {
-      const redis = getRedisSafe();
-      if (redis) {
-        await redis.ping();
-      } else {
-        redisStatus = 'Not Available';
+      if (typeof getRedisSafe === 'function') {
+        const redis = getRedisSafe();
+        if (redis) {
+          await redis.ping();
+          redisStatus = 'Connected';
+        } else {
+          redisStatus = 'Not Available';
+        }
       }
     } catch (error) {
       redisStatus = 'Disconnected';
-      logger.error('Redis health check failed:', error.message);
+      logger.warn('Redis health check failed:', error.message);
     }
 
     const healthData = {
