@@ -28,13 +28,10 @@ ENV TZ=UTC
 FROM base AS dependencies
 
 # Copy package files
-COPY package*.json pnpm-lock.yaml ./
+COPY package*.json ./
 
-# Install pnpm
-RUN npm install -g pnpm@10.18.0
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile --production=false
+# Install dependencies with npm
+RUN npm install --production=false
 
 # =========================================================================
 # Build Stage - Build React application
@@ -45,7 +42,7 @@ FROM dependencies AS build
 COPY . .
 
 # Build application
-RUN pnpm run build
+RUN npm run build
 
 # =========================================================================
 # Nginx Stage - Serve with Nginx
