@@ -827,24 +827,19 @@ const backtestingRoutes = require('./routes/backtesting');
 app.use('/api/risk', riskRoutes);
 app.use('/api/backtesting', backtestingRoutes);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve frontend files
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// =============================================================================
-// ERROR HANDLING
-// =============================================================================
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource was not found',
-    path: req.path,
+// Root endpoint - API welcome message
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'CryptoPulse Backend API',
+    version: '2.0.0',
+    status: 'operational',
+    endpoints: {
+      health: '/health',
+      detailedHealth: '/health/detailed',
+      api: '/api/v1/*'
+    },
+    documentation: 'https://api.thecryptopulse.com/docs',
     timestamp: new Date().toISOString()
   });
 });
@@ -1127,7 +1122,25 @@ app.get('/api/v1/exchanges/:exchange/balance', authenticateToken, async(req, res
   }
 });
 
-// Global error handler
+// =============================================================================
+// 404 HANDLER (Must be after all routes)
+// =============================================================================
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Not Found',
+    message: 'The requested resource was not found',
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// =============================================================================
+// GLOBAL ERROR HANDLER (Must be last)
+// =============================================================================
+
 app.use(errorHandler);
 
 // =============================================================================
