@@ -158,9 +158,7 @@ const helmetConfig = helmet({
 
 // CORS configuration for production
 const corsConfig = cors({
-  origin: (req, callback) => {
-    const origin = req.headers.origin;
-    
+  origin: (origin, callback) => {
     // Get allowed origins from environment variables
     const envOrigins = process.env.ALLOWED_ORIGINS;
     const allowedOrigins = envOrigins ?
