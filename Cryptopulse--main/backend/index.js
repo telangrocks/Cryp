@@ -121,7 +121,7 @@ app.get('/ping', (req, res) => {
 // Apply security middleware
 app.use(helmet(helmetConfig));
 app.use(compression());
-app.use(cors(corsConfig));
+app.use(corsConfig); // corsConfig is already a configured middleware, don't wrap it again
 
 // Rate limiting
 app.use(generalLimiter);
