@@ -158,8 +158,10 @@ const helmetConfig = helmet({
 
 // CORS configuration for production
 const corsConfig = cors({
-  origin: (origin, callback) => {
-  // Get allowed origins from environment variables
+  origin: (req, callback) => {
+    const origin = req.headers.origin;
+    
+    // Get allowed origins from environment variables
     const envOrigins = process.env.ALLOWED_ORIGINS;
     const allowedOrigins = envOrigins ?
       envOrigins.split(',').map(origin => origin.trim()) :
@@ -167,6 +169,9 @@ const corsConfig = cors({
       // Production URLs
         'https://app.cryptopulse.com',
         'https://cryptopulse.com',
+        'https://www.thecryptopulse.com',
+        'https://thecryptopulse.com',
+        'https://api.thecryptopulse.com',
         // Development URLs
         'http://localhost:3000',
         'http://localhost:1337',
