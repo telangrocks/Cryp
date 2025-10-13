@@ -28,6 +28,18 @@ interface ErrorInfo {
   errorBoundaryStack?: string;
 }
 // Production error reporting service
+const postJson = (url: string, data: unknown) => {
+  try {
+    if (!url) return;
+    if (navigator.sendBeacon) {
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+    fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => {});
+  } catch (_) {}
+};
+
 const reportError = (error: Error, errorInfo?: ErrorInfo) => {
   if (__PROD__) {
     // Production error reporting - integrate with your preferred service
@@ -45,26 +57,14 @@ const reportError = (error: Error, errorInfo?: ErrorInfo) => {
     // });
     // Example LogRocket integration:
     // LogRocket.captureException(error);
-    // Fallback: Send to your own error tracking endpoint
-    fetch('/api/errors', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        error: {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        },
-        errorInfo,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
-        userId: localStorage.getItem('userId') || 'anonymous',
-      }),
-    }).catch(() => {
-      // Silent fail for error reporting
+    const errorUrl = import.meta.env.VITE_ERROR_URL || '';
+    postJson(errorUrl, {
+      error: { message: error.message, stack: error.stack, name: error.name },
+      errorInfo,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      userId: localStorage.getItem('userId') || 'anonymous',
     });
   } else {
     // No error reporting in development
@@ -81,21 +81,13 @@ const reportPerformance = (metric: string, value: number, metadata?: Record<stri
     //   value: Math.round(value),
     //   custom_map: metadata,
     // });
-    // Fallback: Send to your own analytics endpoint
-    fetch('/api/analytics/performance', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        metric,
-        value,
-        metadata,
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-      }),
-    }).catch(() => {
-      // Silent fail for analytics
+    const analyticsUrl = import.meta.env.VITE_ANALYTICS_URL || '';
+    postJson(analyticsUrl, {
+      metric,
+      value,
+      metadata,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
     });
   } else {
     // No analytics in development
