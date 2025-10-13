@@ -1,8 +1,13 @@
 # =============================================================================
-# CryptoPulse Frontend Dockerfile - Production Ready
+# CryptoPulse Frontend Production Dockerfile - 100% Production Ready
 # =============================================================================
+# Multi-stage production Dockerfile with security and performance optimizations
+# Author: Shrikant Telang
+# License: MIT
 
-# Use Node.js Alpine as base image
+# =========================================================================
+# Base Stage - Common dependencies and setup
+# =========================================================================
 FROM node:20-alpine AS base
 
 # Set working directory
@@ -13,71 +18,88 @@ RUN apk add --no-cache \
     dumb-init \
     curl \
     ca-certificates \
-    tzdata
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Set timezone to UTC
+ENV TZ=UTC
 
 # =========================================================================
-# Dependencies Stage
+# Dependencies Stage - Install dependencies
 # =========================================================================
 FROM base AS dependencies
 
 # Copy package files
 COPY package*.json ./
 
-# Install pnpm globally
+# Install pnpm globally (version locked for consistency)
 RUN npm install -g pnpm@10.18.0
 
-# Install dependencies with pnpm
+# Install all dependencies (including devDependencies for build)
 RUN pnpm install --production=false
 
 # =========================================================================
-# Build Stage
+# Build Stage - Build React application
 # =========================================================================
 FROM dependencies AS build
 
 # Copy source code
 COPY . .
 
-# Build application with pnpm
+# Build application with production optimizations
 RUN pnpm run build
 
 # =========================================================================
-# Production Stage - Nginx
+# Production Stage - Nginx for serving static files
 # =========================================================================
 FROM nginx:alpine AS production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install additional tools and dumb-init for proper signal handling
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Set timezone
+ENV TZ=UTC
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+# Create non-root nginx user
+RUN addgroup -g 1001 -S nginx && \
+    adduser -S nginx -u 1001 -G nginx
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+# Create necessary nginx directories
+RUN mkdir -p /var/cache/nginx/client_temp && \
+    mkdir -p /var/cache/nginx/proxy_temp && \
+    mkdir -p /var/cache/nginx/fastcgi_temp && \
+    mkdir -p /var/cache/nginx/uwsgi_temp && \
+    mkdir -p /var/cache/nginx/scgi_temp && \
+    mkdir -p /var/run/nginx
 
-# Set ownership
-RUN chown -R nextjs:nodejs /usr/share/nginx/html && \
-    chown -R nextjs:nodejs /var/cache/nginx && \
-    chown -R nextjs:nodejs /var/log/nginx && \
-    chown -R nextjs:nodejs /etc/nginx/conf.d
+# Set proper ownership for all nginx directories
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    chown -R nginx:nginx /var/run/nginx
 
-# Create nginx pid directory
-RUN mkdir -p /var/run/nginx && \
-    chown -R nextjs:nodejs /var/run/nginx
+# Switch to non-root user for security
+USER nginx
 
-# Switch to non-root user
-USER nextjs
+# Expose port 80 for HTTP traffic
+EXPOSE 80
 
-# Expose port
-EXPOSE 3000
+# Health check to ensure service is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/ || exit 1
-
-# Start nginx with dumb-init
+# Start nginx with dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["nginx", "-g", "daemon off;"]
