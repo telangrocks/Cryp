@@ -15,6 +15,7 @@ These variables **MUST** be set for the application to work:
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `VITE_API_BASE_URL` | `https://cryptopulse-backend-j4ne.onrender.com` | Backend API URL |
+| `VITE_ENCRYPTION_KEY` | `32+ char random string` | Used by frontend security utils |
 | `NODE_ENV` | `production` | Node environment |
 
 ### **Application Info**
@@ -83,6 +84,7 @@ VITE_API_BASE_URL=https://cryptopulse-backend-j4ne.onrender.com
 NODE_ENV=production
 VITE_APP_NAME=CryptoPulse
 VITE_APP_VERSION=2.0.0
+VITE_ENCRYPTION_KEY=ThisIsAReallyLongEncryptionKeyThatIsAtLeast32Chars123
 ```
 
 ### **Recommended Production Configuration**
@@ -95,6 +97,8 @@ NODE_ENV=production
 # Application Info
 VITE_APP_NAME=CryptoPulse
 VITE_APP_VERSION=2.0.0
+# Security
+VITE_ENCRYPTION_KEY=ThisIsAReallyLongEncryptionKeyThatIsAtLeast32Chars123
 
 # Build Configuration
 VITE_BUILD_TARGET=production

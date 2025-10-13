@@ -125,7 +125,7 @@
   },
   "protocol_handlers": [
     {
-      "protocol": "cryptopulse",
+      "protocol": "web+cryptopulse",
       "url": "/?protocol=%s"
     }
   ],
