@@ -1123,6 +1123,66 @@ app.get('/api/v1/exchanges/:exchange/balance', authenticateToken, async(req, res
 });
 
 // =============================================================================
+// ANALYTICS ENDPOINTS
+// =============================================================================
+
+// Analytics performance endpoint
+app.post('/api/analytics/performance', (req, res) => {
+  try {
+    const { metric, value, timestamp, url, userAgent, totalInitTime, connection, memoryUsage } = req.body;
+    
+    // Log performance metrics (in production, you'd send to analytics service)
+    logger.info('Performance metric received', {
+      metric,
+      value,
+      timestamp,
+      url,
+      userAgent: userAgent ? userAgent.substring(0, 100) : 'unknown',
+      totalInitTime,
+      connection,
+      memoryUsage
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Performance metric recorded'
+    });
+  } catch (error) {
+    logger.error('Analytics performance error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record performance metric'
+    });
+  }
+});
+
+// Analytics initialization endpoint
+app.post('/api/analytics/initialization', (req, res) => {
+  try {
+    const { type, timestamp, userAgent, url } = req.body;
+    
+    // Log initialization metrics
+    logger.info('Initialization metric received', {
+      type,
+      timestamp,
+      url,
+      userAgent: userAgent ? userAgent.substring(0, 100) : 'unknown'
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Initialization metric recorded'
+    });
+  } catch (error) {
+    logger.error('Analytics initialization error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record initialization metric'
+    });
+  }
+});
+
+// =============================================================================
 // 404 HANDLER (Must be after all routes)
 // =============================================================================
 

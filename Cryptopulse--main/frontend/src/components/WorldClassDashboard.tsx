@@ -74,11 +74,11 @@ export default function WorldClassDashboard() {
         }
 
         if (tradesData.success) {
-          setRecentTrades(tradesData.data || []);
+          setRecentTrades(Array.isArray(tradesData.data) ? tradesData.data : []);
         }
 
         if (insightsData.success) {
-          setAiInsights(insightsData.data || []);
+          setAiInsights(Array.isArray(insightsData.data) ? insightsData.data : []);
         }
       } catch (error) {
         logError('Failed to fetch dashboard data:', 'WorldClassDashboard', error);
@@ -293,7 +293,7 @@ export default function WorldClassDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentTrades.length > 0 ? (
+                {recentTrades && Array.isArray(recentTrades) && recentTrades.length > 0 ? (
                   recentTrades.map((trade, index) => (
                     <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg" key={index}>
                       <div className="flex items-center space-x-2">
@@ -335,7 +335,7 @@ export default function WorldClassDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {aiInsights.length > 0 ? (
+                {aiInsights && Array.isArray(aiInsights) && aiInsights.length > 0 ? (
                   aiInsights.map((insight, index) => (
                     <div className="p-3 bg-slate-700/30 rounded-lg" key={index}>
                       <div className="flex items-start space-x-2">
