@@ -12,7 +12,27 @@ const rateLimit = require('express-rate-limit');
 const exchangeService = require('./exchange-service');
 const cashfreeService = require('./cashfree');
 const monitoringService = require('./monitoring');
-const utils = require('./utils');
+
+// Import utils with error handling
+let utils;
+try {
+  utils = require('./utils');
+} catch (error) {
+  console.error('Failed to load utils module:', error.message);
+  // Create fallback utils
+  utils = {
+    logging: {
+      logInfo: (message, data) => console.log(`[INFO] ${message}`, data ? JSON.stringify(data) : ''),
+      logError: (message, error) => console.error(`[ERROR] ${message}`, error ? JSON.stringify(error) : ''),
+      logWarning: (message, data) => console.warn(`[WARN] ${message}`, data ? JSON.stringify(data) : ''),
+      logDebug: (message, data) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`[DEBUG] ${message}`, data ? JSON.stringify(data) : '');
+        }
+      }
+    }
+  };
+}
 
 const app = express();
 
@@ -376,20 +396,28 @@ process.on('SIGINT', () => {
 
 // Unhandled promise rejection
 process.on('unhandledRejection', (reason, promise) => {
-  utils.logging.logError('Unhandled Promise Rejection', {
-    reason: reason.toString(),
-    promise: promise.toString(),
-    timestamp: new Date().toISOString()
-  });
+  if (utils && utils.logging && utils.logging.logError) {
+    utils.logging.logError('Unhandled Promise Rejection', {
+      reason: reason.toString(),
+      promise: promise.toString(),
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    console.error('[ERROR] Unhandled Promise Rejection:', reason.toString(), promise.toString());
+  }
 });
 
 // Uncaught exception
 process.on('uncaughtException', (error) => {
-  utils.logging.logError('Uncaught Exception', {
-    error: error.message,
-    stack: error.stack,
-    timestamp: new Date().toISOString()
-  });
+  if (utils && utils.logging && utils.logging.logError) {
+    utils.logging.logError('Uncaught Exception', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    console.error('[ERROR] Uncaught Exception:', error.message, error.stack);
+  }
   process.exit(1);
 });
 
