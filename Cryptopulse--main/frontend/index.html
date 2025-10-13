@@ -195,7 +195,7 @@
       })();
 
       // Versioned SW registration to force updates on each deploy
-      if ('serviceWorker' in navigator) {
+      if (false && 'serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           const swVersion = 'v' + (document.querySelector('meta[name="build-version"]')?.getAttribute('content') || Date.now());
           const swUrl = `/sw.js?${swVersion}`;

@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logInfo('Attempting user login', 'Auth');
 
       // Use REST API for authentication
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/login`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Use REST API for registration
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/register`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Use REST API to invalidate session on server
       try {
         const sessionToken = localStorage.getItem('cryptopulse-session');
-        await fetch(`${config.api.backendURL}/api/v1/auth/logout`, {
+        await fetch(`${config.api.baseUrl}/api/v1/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Try to call server API if available
       try {
         const sessionToken = localStorage.getItem('cryptopulse-session');
-        const response = await fetch(`${config.api.backendURL}/api/v1/disclaimer/accept`, {
+        const response = await fetch(`${config.api.baseUrl}/api/v1/disclaimer/accept`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -316,7 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Try to check server status, but don't fail if it doesn't exist
       try {
         const sessionToken = localStorage.getItem('cryptopulse-session');
-        const response = await fetch(`${config.api.backendURL}/api/v1/disclaimer/status`, {
+        const response = await fetch(`${config.api.baseUrl}/api/v1/disclaimer/status`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -348,7 +348,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const requestPasswordReset = async (email: string) => {
     try {
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/request-password-reset`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/request-password-reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -367,7 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (token: string, newPassword: string) => {
     try {
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/reset-password`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -386,7 +386,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const validateResetToken = async (token: string) => {
     try {
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/validate-reset-token`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/validate-reset-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      const response = await fetch(`${config.api.backendURL}/api/v1/auth/refresh`, {
+      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
