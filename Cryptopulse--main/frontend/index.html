@@ -182,32 +182,54 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration (versioned) + Loader failsafe -->
     <script>
+      // Failsafe: ensure HTML loader never persists beyond 8s
+      (function ensureLoaderRemoved() {
+        const FORCE_HIDE_MS = 8000;
+        setTimeout(() => {
+          document.body.classList.add('app-loaded');
+          const el = document.querySelector('.app-loading');
+          if (el) el.remove();
+        }, FORCE_HIDE_MS);
+      })();
+
+      // Versioned SW registration to force updates on each deploy
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          const swVersion = 'v' + (document.querySelector('meta[name="build-version"]')?.getAttribute('content') || Date.now());
+          const swUrl = `/sw.js?${swVersion}`;
+
+          navigator.serviceWorker.register(swUrl)
             .then((registration) => {
-              console.log('SW registered: ', registration);
-              
-              // Check for updates
+              // Try to update immediately
+              registration.update().catch(() => {});
+
+              // Swap to waiting service worker without manual confirm
+              function promptAndReload() {
+                try {
+                  if (registration.waiting) {
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                } catch (_) {}
+                setTimeout(() => window.location.reload(), 300);
+              }
+
+              if (registration.waiting) {
+                promptAndReload();
+              }
+
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      // New content is available, notify user
-                      if (confirm('New version available! Reload to update?')) {
-                        window.location.reload();
-                      }
-                    }
-                  });
-                }
+                if (!newWorker) return;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    promptAndReload();
+                  }
+                });
               });
             })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
+            .catch(() => {});
         });
       }
     </script>
