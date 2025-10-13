@@ -30,8 +30,11 @@ FROM base AS dependencies
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with npm
-RUN npm install --production=false
+# Install pnpm globally
+RUN npm install -g pnpm@10.18.0
+
+# Install dependencies with pnpm (without lockfile for initial build)
+RUN pnpm install --production=false
 
 # =========================================================================
 # Build Stage - Build React application
@@ -42,7 +45,7 @@ FROM dependencies AS build
 COPY . .
 
 # Build application
-RUN npm run build
+RUN pnpm run build
 
 # =========================================================================
 # Nginx Stage - Serve with Nginx
