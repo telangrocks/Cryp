@@ -144,10 +144,20 @@ try {
       description: import.meta.env.VITE_APP_DESCRIPTION || 'AI-Powered Cryptocurrency Trading Bot',
     },
     security: {
-      encryptionKey: validateSecret(
-        import.meta.env.VITE_ENCRYPTION_KEY,
-        'Encryption Key',
-      ),
+      encryptionKey: (() => {
+        const key = import.meta.env.VITE_ENCRYPTION_KEY || localStorage.getItem('VITE_ENCRYPTION_KEY') || '';
+        if (key && key.length >= 32) {
+          return key;
+        }
+        // In case the service provider injects env only at runtime and not at build,
+        // allow a short grace period by reading from a meta tag as a fallback.
+        const meta = document.querySelector('meta[name="vite-encryption-key"]') as HTMLMetaElement | null;
+        const metaKey = meta?.content || '';
+        if (metaKey && metaKey.length >= 32) {
+          return metaKey;
+        }
+        return validateSecret(import.meta.env.VITE_ENCRYPTION_KEY, 'Encryption Key');
+      })(),
       sessionTimeout: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000'), // 1 hour
       csrfTokenHeader: import.meta.env.VITE_CSRF_TOKEN_HEADER || 'X-CSRF-Token',
     },

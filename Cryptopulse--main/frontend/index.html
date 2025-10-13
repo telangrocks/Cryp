@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Note: security headers are delivered by nginx response headers in production -->
+    <!-- Optional runtime fallback for env-injected secrets (read by config.ts if needed) -->
+    <meta name="vite-encryption-key" content="">
     
     <!-- CSP is set by nginx headers; avoid meta CSP limitations in modern browsers -->
     
