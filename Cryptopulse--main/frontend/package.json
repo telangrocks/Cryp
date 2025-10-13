@@ -131,5 +131,21 @@
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/node": "^22.10.2",
+      "vite": "^7.1.8"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@algolia/client-search",
+        "react-native"
+      ],
+      "allowedVersions": {
+        "vite": "7",
+        "@types/node": "22"
+      }
+    }
   }
 }

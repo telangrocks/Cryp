@@ -29,14 +29,14 @@ ENV TZ=UTC
 # =========================================================================
 FROM base AS dependencies
 
-# Copy package files
-COPY package*.json ./
+# Copy package files and pnpm config
+COPY package*.json .npmrc ./
 
 # Install pnpm globally (version locked for consistency)
 RUN npm install -g pnpm@10.18.0
 
 # Install all dependencies (including devDependencies for build)
-RUN pnpm install --production=false
+RUN pnpm install --production=false --shamefully-hoist
 
 # =========================================================================
 # Build Stage - Build React application
