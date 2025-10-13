@@ -385,12 +385,20 @@ app.use('*', (req, res) => {
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {
-  utils.logging.logInfo('SIGTERM received, shutting down gracefully');
+  if (utils && utils.logging && utils.logging.logInfo) {
+    utils.logging.logInfo('SIGTERM received, shutting down gracefully');
+  } else {
+    console.log('[INFO] SIGTERM received, shutting down gracefully');
+  }
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  utils.logging.logInfo('SIGINT received, shutting down gracefully');
+  if (utils && utils.logging && utils.logging.logInfo) {
+    utils.logging.logInfo('SIGINT received, shutting down gracefully');
+  } else {
+    console.log('[INFO] SIGINT received, shutting down gracefully');
+  }
   process.exit(0);
 });
 
@@ -430,13 +438,17 @@ if (require.main === module) {
   const HOST = process.env.HOST || '0.0.0.0';
   
   const server = app.listen(PORT, HOST, () => {
-    utils.logging.logInfo('Cloud Functions Server Started', {
-      host: HOST,
-      port: PORT,
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.SERVICE_VERSION || '2.0.0',
-      timestamp: new Date().toISOString()
-    });
+    if (utils && utils.logging && utils.logging.logInfo) {
+      utils.logging.logInfo('Cloud Functions Server Started', {
+        host: HOST,
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development',
+        version: process.env.SERVICE_VERSION || '2.0.0',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.log(`[INFO] Cloud Functions Server Started on ${HOST}:${PORT}`);
+    }
   });
 
   // Server timeout
@@ -446,21 +458,37 @@ if (require.main === module) {
 
   // Graceful shutdown
   const gracefulShutdown = (signal) => {
-    utils.logging.logInfo(`Received ${signal}, shutting down gracefully`);
+    if (utils && utils.logging && utils.logging.logInfo) {
+      utils.logging.logInfo(`Received ${signal}, shutting down gracefully`);
+    } else {
+      console.log(`[INFO] Received ${signal}, shutting down gracefully`);
+    }
     
     server.close((err) => {
       if (err) {
-        utils.logging.logError('Error during server shutdown', { error: err.message });
+        if (utils && utils.logging && utils.logging.logError) {
+          utils.logging.logError('Error during server shutdown', { error: err.message });
+        } else {
+          console.error('[ERROR] Error during server shutdown:', err.message);
+        }
         process.exit(1);
       }
       
-      utils.logging.logInfo('Server closed successfully');
+      if (utils && utils.logging && utils.logging.logInfo) {
+        utils.logging.logInfo('Server closed successfully');
+      } else {
+        console.log('[INFO] Server closed successfully');
+      }
       process.exit(0);
     });
     
     // Force close after 10 seconds
     setTimeout(() => {
-      utils.logging.logError('Forced shutdown after timeout');
+      if (utils && utils.logging && utils.logging.logError) {
+        utils.logging.logError('Forced shutdown after timeout');
+      } else {
+        console.error('[ERROR] Forced shutdown after timeout');
+      }
       process.exit(1);
     }, 10000);
   };
