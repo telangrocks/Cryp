@@ -145,18 +145,28 @@ try {
     },
     security: {
       encryptionKey: (() => {
-        const key = import.meta.env.VITE_ENCRYPTION_KEY || localStorage.getItem('VITE_ENCRYPTION_KEY') || '';
-        if (key && key.length >= 32) {
-          return key;
-        }
-        // In case the service provider injects env only at runtime and not at build,
-        // allow a short grace period by reading from a meta tag as a fallback.
+        // 1) Preferred: build/runtime env
+        const fromEnv = import.meta.env.VITE_ENCRYPTION_KEY as string | undefined;
+        if (fromEnv && fromEnv.length >= 32) return fromEnv;
+
+        // 2) Persisted locally
+        const fromStorage = localStorage.getItem('VITE_ENCRYPTION_KEY') || '';
+        if (fromStorage.length >= 32) return fromStorage;
+
+        // 3) Optional meta hook (ops can inject at runtime via HTML)
         const meta = document.querySelector('meta[name="vite-encryption-key"]') as HTMLMetaElement | null;
-        const metaKey = meta?.content || '';
-        if (metaKey && metaKey.length >= 32) {
-          return metaKey;
+        const fromMeta = meta?.content || '';
+        if (fromMeta.length >= 32) {
+          localStorage.setItem('VITE_ENCRYPTION_KEY', fromMeta);
+          return fromMeta;
         }
-        return validateSecret(import.meta.env.VITE_ENCRYPTION_KEY, 'Encryption Key');
+
+        // 4) Last resort: generate a cryptographically strong key and persist.
+        const array = new Uint8Array(48); // 384 bits
+        (self.crypto || (window as any).crypto).getRandomValues(array);
+        const generated = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('VITE_ENCRYPTION_KEY', generated);
+        return generated;
       })(),
       sessionTimeout: parseInt(import.meta.env.VITE_SESSION_TIMEOUT || '3600000'), // 1 hour
       csrfTokenHeader: import.meta.env.VITE_CSRF_TOKEN_HEADER || 'X-CSRF-Token',
