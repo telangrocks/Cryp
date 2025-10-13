@@ -217,7 +217,8 @@ try {
       warnings.push('Default encryption key detected - change for production');
     }
 
-    if (config.features.enableAnalytics === false) {
+    // Only warn about analytics if explicitly required via env flag
+    if (import.meta.env.VITE_REQUIRE_ANALYTICS === 'true' && config.features.enableAnalytics === false) {
       warnings.push('Analytics should be enabled in production for monitoring');
     }
 
