@@ -280,15 +280,6 @@ function initializeApp(): void {
     performanceMonitor.mark('react-render-end');
     performanceMonitor.measure('react-render', 'react-render-start', 'react-render-end');
     
-    // Remove loading screen
-    setTimeout(() => {
-      document.body.classList.add('app-loaded');
-      const loadingEl = document.querySelector('.app-loading');
-      if (loadingEl) {
-        loadingEl.remove();
-      }
-    }, 100);
-    
     // Mark total initialization time
     performanceMonitor.mark('app-init-end');
     performanceMonitor.measure('app-total-init', 'app-init-start', 'app-init-end');

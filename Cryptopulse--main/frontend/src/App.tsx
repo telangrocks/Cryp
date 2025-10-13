@@ -105,6 +105,33 @@ const reportPerformance = (metric: string, value: number, metadata?: Record<stri
 const AppContent = React.memo(() => {
   const { loading } = useAuth();
   useDocumentHead({ title: 'CryptoPulse - AI Trading Platform' });
+  
+  // Remove HTML loading screen when auth loading completes
+  React.useEffect(() => {
+    if (!loading) {
+      // Auth loading completed, remove HTML loading screen
+      document.body.classList.add('app-loaded');
+      const loadingEl = document.querySelector('.app-loading');
+      if (loadingEl) {
+        loadingEl.remove();
+      }
+    }
+  }, [loading]);
+  
+  // Fallback timeout to ensure loading screen is removed
+  React.useEffect(() => {
+    const fallbackTimeout = setTimeout(() => {
+      // Force remove loading screen after 5 seconds regardless of auth state
+      document.body.classList.add('app-loaded');
+      const loadingEl = document.querySelector('.app-loading');
+      if (loadingEl) {
+        loadingEl.remove();
+      }
+    }, 5000);
+    
+    return () => clearTimeout(fallbackTimeout);
+  }, []);
+  
   // Performance monitoring for component render
   React.useEffect(() => {
     const startTime = performance.now();
@@ -116,6 +143,7 @@ const AppContent = React.memo(() => {
       });
     };
   }, [loading]);
+  
   if (loading) {
     return <SplashScreen />;
   }
