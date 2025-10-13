@@ -43,6 +43,23 @@ RUN pnpm install --production=false --shamefully-hoist
 # =========================================================================
 FROM dependencies AS build
 
+# Build-time env (Vite reads VITE_* at build). Render will inject
+# service envs into docker build; declare ARG to pick them up.
+ARG VITE_API_BASE_URL
+ARG VITE_APP_NAME
+ARG VITE_APP_VERSION
+ARG VITE_BUILD_TARGET=production
+ARG VITE_ENABLE_SOURCEMAPS=false
+ARG NODE_ENV=production
+
+# Expose as ENV so tools invoked during build can access them
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+ENV VITE_APP_VERSION=${VITE_APP_VERSION}
+ENV VITE_BUILD_TARGET=${VITE_BUILD_TARGET}
+ENV VITE_ENABLE_SOURCEMAPS=${VITE_ENABLE_SOURCEMAPS}
+ENV NODE_ENV=${NODE_ENV}
+
 # Copy source code
 COPY . .
 
