@@ -3,36 +3,23 @@
 // =============================================================================
 // Production-ready cloud functions for CryptoPulse trading platform
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import cloud services
-const exchangeService = require('./exchange-service');
-const cashfreeService = require('./cashfree');
-const monitoringService = require('./monitoring');
+import exchangeService from './exchange-service.js';
+import cashfreeService from './cashfree.js';
+import monitoringService from './monitoring.js';
 
 // Import utils with error handling
-let utils;
-try {
-  utils = require('./utils');
-} catch (error) {
-  console.error('Failed to load utils module:', error.message);
-  // Create fallback utils
-  utils = {
-    logging: {
-      logInfo: (message, data) => console.log(`[INFO] ${message}`, data ? JSON.stringify(data) : ''),
-      logError: (message, error) => console.error(`[ERROR] ${message}`, error ? JSON.stringify(error) : ''),
-      logWarning: (message, data) => console.warn(`[WARN] ${message}`, data ? JSON.stringify(data) : ''),
-      logDebug: (message, data) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.debug(`[DEBUG] ${message}`, data ? JSON.stringify(data) : '');
-        }
-      }
-    }
-  };
-}
+import utils from './utils.js';
 
 const app = express();
 

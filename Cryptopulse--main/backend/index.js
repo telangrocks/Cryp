@@ -3,12 +3,16 @@
 // =============================================================================
 // Complete backend implementation with Express and production features
 
-const express = require('express');
-const path = require('path');
-const winston = require('winston');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
+import express from 'express';
+import path from 'path';
+import winston from 'winston';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import enhanced security middleware
 const {
@@ -24,21 +28,21 @@ const {
   validationRules,
   requestLogger,
   errorHandler
-} = require('./lib/security');
+} from './lib/security.js';
 
-const { body } = require('express-validator');
+import { body } from 'express-validator';
 
 // Import authentication and database modules
-const {
+import {
   hashPassword,
   comparePassword,
   generateTokens,
   authenticateToken,
   validatePassword,
   validateEmail
-} = require('./lib/auth');
+} from './lib/auth.js';
 
-const {
+import {
   initDatabases,
   query,
   getRedis: _getRedis,
@@ -48,18 +52,18 @@ const {
   ExchangeConfig,
   TradingStrategy,
   Cache: _Cache
-} = require('./lib/database');
+} from './lib/database.js';
 
 // Import trading services
-const marketDataService = require('./lib/marketDataService');
-const exchangeService = require('./lib/exchangeService');
-const TradingBot = require('./lib/tradingBot');
+import marketDataService from './lib/marketDataService.js';
+import exchangeService from './lib/exchangeService.js';
+import TradingBot from './lib/tradingBot.js';
 
 // Import WebSocket server
-const { createWebSocketServer } = require('./lib/websocketServer');
+import { createWebSocketServer } from './lib/websocketServer.js';
 
 // Load environment variables with fallback strategy
-const fs = require('fs');
+import dotenv from 'dotenv';
 
 // Try to load environment files in order of preference
 const envFiles = [
@@ -74,17 +78,17 @@ let envLoaded = false;
 for (const envFile of envFiles) {
   const envPath = path.join(__dirname, envFile);
   if (fs.existsSync(envPath)) {
-    require('dotenv').config({ path: envPath });
+    dotenv.config({ path: envPath });
     envLoaded = true;
     break;
   }
 }
 
 // Import environment validation
-const env = require('./lib/envValidation');
+import env from './lib/envValidation.js';
 
 // Import logger from logging module
-const { logger } = require('./lib/logging');
+import { logger } from './lib/logging.js';
 
 // Backend deployment test - automated setup
 // PRODUCTION DEPLOYMENT: All critical fixes applied
@@ -820,8 +824,8 @@ app.get('/api/v1/exchanges/configured', authenticateToken, async(req, res) => {
 // =============================================================================
 
 // Import API routes
-const riskRoutes = require('./routes/risk');
-const backtestingRoutes = require('./routes/backtesting');
+import riskRoutes from './routes/risk.js';
+import backtestingRoutes from './routes/backtesting.js';
 
 // Mount API routes
 app.use('/api/risk', riskRoutes);
@@ -1230,7 +1234,7 @@ async function _executeExchangeTrade({ exchange, symbol, side, amount, price, ap
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const crypto = require('crypto');
+    const crypto = await import('crypto');
     const mockResult = {
       orderId: `order_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`,
       status: 'completed',
