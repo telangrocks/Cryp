@@ -3,13 +3,13 @@
 // =============================================================================
 // Comprehensive security middleware for CryptoPulse backend
 
-const rateLimit = require('express-rate-limit');
-const slowDown = require('express-slow-down');
-const { body, validationResult } = require('express-validator');
-const compression = require('compression');
-const helmet = require('helmet');
-const { logger } = require('./logging');
-const cors = require('cors');
+import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
+import { body, validationResult } from 'express-validator';
+import compression from 'compression';
+import helmet from 'helmet';
+import { logger } from './logging.js';
+import cors from 'cors';
 // Note: csurf is deprecated, using custom CSRF implementation
 // const csrf = require('csurf');
 

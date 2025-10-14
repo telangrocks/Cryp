@@ -3,9 +3,16 @@
 // =============================================================================
 // Centralized logging with structured output, multiple transports, and monitoring
 
-const winston = require('winston');
-const path = require('path');
-const fs = require('fs');
+import winston from 'winston';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import os from 'os';
+import crypto from 'crypto';
+import zlib from 'zlib';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Ensure logs directory exists with proper error handling
 const logsDir = path.join(__dirname, '../logs');
@@ -42,7 +49,7 @@ const logFormat = winston.format.combine(
       service: service || 'cryptopulse-backend',
       version: version || '2.0.0',
       environment: environment || process.env.NODE_ENV || 'development',
-      hostname: require('os').hostname(),
+      hostname: os.hostname(),
       pid: process.pid,
       ...meta
     };
@@ -286,7 +293,7 @@ const logMaintenance = {
         const stats = fs.statSync(filePath);
 
         if (now - stats.mtime.getTime() > compressAge) {
-          const gzip = require('zlib').createGzip();
+          const gzip = zlib.createGzip();
           const input = fs.createReadStream(filePath);
           const output = fs.createWriteStream(filePath + '.gz');
 
@@ -347,7 +354,7 @@ const requestLogger = (req, res, next) => {
   const start = Date.now();
   const correlationId = req.headers['x-correlation-id'] || 
                        req.headers['x-request-id'] || 
-                       require('crypto').randomUUID();
+                       crypto.randomUUID();
   
   // Add correlation ID to request for downstream tracing
   req.correlationId = correlationId;
