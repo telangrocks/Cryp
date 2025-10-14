@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "CryptoPulse Cloud Services - Production Ready",
   "main": "main.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "start": "node main.js",
     "dev": "nodemon main.js",

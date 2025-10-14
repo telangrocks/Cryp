@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:production": "cross-env NODE_ENV=production vite build --config vite.config.production.ts --mode production",
+    "build:production": "cross-env NODE_ENV=production vite build --mode production",
     "build:northflank": "cross-env NODE_ENV=production VITE_API_BASE_URL=https://api.cryptopulse.com vite build --mode production",
     "start": "node server.js",
     "preview": "vite preview",
