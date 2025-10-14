@@ -9,17 +9,14 @@ RUN npm install -g pnpm@10.18.0
 # Copy package files
 COPY package*.json .npmrc ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install all dependencies
+RUN pnpm install
 
 # Copy source code
 COPY . .
 
 # Build the application
 RUN pnpm run build
-
-# Install production dependencies only
-RUN pnpm install --production
 
 # Expose port (Render will set PORT env var)
 EXPOSE $PORT
