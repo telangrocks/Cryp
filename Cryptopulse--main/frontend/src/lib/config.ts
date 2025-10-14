@@ -130,7 +130,7 @@ try {
     api: {
       baseUrl: validateUrl(
         import.meta.env.VITE_API_BASE_URL ||
-        (import.meta.env.MODE === 'production' ? '' : 'http://localhost:1337'),
+        (import.meta.env.MODE === 'production' ? 'https://cryptopulse-backend-j4ne.onrender.com' : 'http://localhost:1337'),
         'API Base',
       ),
       timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
