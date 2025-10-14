@@ -10,6 +10,7 @@ import { AccessibilityProvider } from './components/AccessibilityProvider';
 import ErrorFallback from './components/ErrorFallback';
 import GlobalLoadingIndicator from './components/GlobalLoadingIndicator';
 import SplashScreen from './components/SplashScreen';
+import VendorErrorBoundary from './components/VendorErrorBoundary';
 // import EnhancedErrorBoundary from './components/EnhancedErrorBoundary';
 import { Toaster } from './components/ui/toaster';
 import { AppStateProvider } from './contexts/AppStateContext';
@@ -195,7 +196,7 @@ const App = React.memo(() => {
   );
 });
 App.displayName = 'App';
-// Production Error Boundary Wrapper
+// Production Error Boundary Wrapper with Vendor Error Handling
 const AppWithErrorBoundary = React.memo(() => {
   const handleError = React.useCallback((error: Error, errorInfo: any) => {
     // Enhanced production error reporting
@@ -271,64 +272,66 @@ const AppWithErrorBoundary = React.memo(() => {
     };
   }, []);
   return (
-    <ErrorBoundary
-      fallbackRender={({
-        error: _error,
-        resetErrorBoundary: _resetErrorBoundary,
-      }: {
-        error: Error;
-        resetErrorBoundary: () => void
-      }) => (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50
-                        dark:bg-gray-900">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg
-                          rounded-lg p-6">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12
-                              rounded-full bg-red-100 dark:bg-red-900">
-                <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none"
-                  stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                </svg>
+    <VendorErrorBoundary>
+      <ErrorBoundary
+        fallbackRender={({
+          error: _error,
+          resetErrorBoundary: _resetErrorBoundary,
+        }: {
+          error: Error;
+          resetErrorBoundary: () => void
+        }) => (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50
+                          dark:bg-gray-900">
+            <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg
+                            rounded-lg p-6">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12
+                                rounded-full bg-red-100 dark:bg-red-900">
+                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+                  </svg>
+                </div>
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Application Error
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Something went wrong. Please try refreshing the page.
+                </p>
+                <div className="mt-6">
+                  <button
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm
+                               font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    onClick={() => window.location.reload()}
+                  >
+                    Try Again
+                  </button>
+                </div>
+                {__DEV__ && (
+                  <details className="mt-4 text-left">
+                    <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400">
+                      Error Details (Development)
+                    </summary>
+                    <pre className="mt-2 text-xs text-gray-500 dark:text-gray-500 overflow-auto">
+                      {_error?.message}
+                      {_error?.stack}
+                    </pre>
+                  </details>
+                )}
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-                Application Error
-              </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Something went wrong. Please try refreshing the page.
-              </p>
-              <div className="mt-6">
-                <button
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm
-                             font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700
-                             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  onClick={() => window.location.reload()}
-                >
-                  Try Again
-                </button>
-              </div>
-              {__DEV__ && (
-                <details className="mt-4 text-left">
-                  <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400">
-                    Error Details (Development)
-                  </summary>
-                  <pre className="mt-2 text-xs text-gray-500 dark:text-gray-500 overflow-auto">
-                    {_error?.message}
-                    {_error?.stack}
-                  </pre>
-                </details>
-              )}
             </div>
           </div>
-        </div>
-      )}
-      onError={handleError}
-      onReset={handleReset}
-      resetKeys={[window.location.pathname]}
-    >
-      <App />
-    </ErrorBoundary>
+        )}
+        onError={handleError}
+        onReset={handleReset}
+        resetKeys={[window.location.pathname]}
+      >
+        <App />
+      </ErrorBoundary>
+    </VendorErrorBoundary>
   );
 });
 AppWithErrorBoundary.displayName = 'AppWithErrorBoundary';

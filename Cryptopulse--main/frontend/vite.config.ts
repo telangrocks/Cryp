@@ -48,35 +48,56 @@ export default defineConfig({
       minifyWhitespace: process.env['NODE_ENV'] === 'production',
     },
 
-    // Optimize chunks for faster loading
+    // Optimize chunks for faster loading with better error handling
     rollupOptions: {
       onwarn(warning: any, warn: any) {
         // Suppress mixed import warnings
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
         if (warning.message.includes('dynamic import will not move module into another chunk')) return;
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
         warn(warning);
       },
       output: {
+        // More conservative chunking to prevent vendor bundle errors
         manualChunks: (id: string) => {
-          // Group common libraries
+          // Group React and related libraries more carefully
           if (id.includes('node_modules')) {
+            // Core React libraries in one chunk
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
+            // Radix UI components
             if (id.includes('@radix-ui')) {
               return 'ui-vendor';
             }
+            // Utility libraries
             if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('zod')) {
               return 'utils-vendor';
             }
+            // TanStack Query
+            if (id.includes('@tanstack')) {
+              return 'query-vendor';
+            }
+            // Redux/Zustand
+            if (id.includes('@reduxjs') || id.includes('redux') || id.includes('zustand')) {
+              return 'state-vendor';
+            }
+            // Charts and visualization
+            if (id.includes('recharts') || id.includes('chart')) {
+              return 'chart-vendor';
+            }
+            // Everything else in vendor
             return 'vendor';
-          }
-          // Group our lib modules to avoid mixed import issues
-          if (id.includes('/src/lib/')) {
-            return 'lib-utils';
           }
           return undefined;
         },
+        // Ensure consistent chunk naming
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+          return `assets/[name]-[hash].js`;
+        },
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
   },
