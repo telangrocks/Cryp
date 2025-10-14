@@ -4,8 +4,8 @@
 // Centralized environment variable validation with fail-fast behavior
 // Ensures all required secrets and configuration are properly set
 
-const { cleanEnv, str, bool, num, makeValidator } = require('envalid');
-const { logger } = require('./logging');
+import { cleanEnv, str, bool, num, makeValidator } from 'envalid';
+import { logger } from './logging.js';
 
 // Security patterns to detect weak or placeholder values
 const WEAK_PATTERNS = [

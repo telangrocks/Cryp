@@ -3,11 +3,11 @@
 // =============================================================================
 // Comprehensive trading bot with AI-powered signal generation
 
-const marketDataService = require('./marketDataService');
-const { logger } = require('./logging');
-const { User: _User, Trade, TradingStrategy, ExchangeConfig: _ExchangeConfig } = require('./database');
-const { riskManager } = require('./riskManager');
-const { backtestingEngine } = require('./backtestingEngine');
+import marketDataService from './marketDataService.js';
+import { logger } from './logging.js';
+import { User: _User, Trade, TradingStrategy, ExchangeConfig: _ExchangeConfig } from './database.js';
+import { riskManager } from './riskManager.js';
+import { backtestingEngine } from './backtestingEngine.js';
 
 class TradingBot {
   constructor() {

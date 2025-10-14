@@ -3,10 +3,17 @@
 // =============================================================================
 // Database connection and query utilities for CryptoPulse backend
 
-const { Pool } = require('pg');
-const { MongoClient } = require('mongodb');
-const Redis = require('redis');
-const { logger } = require('./logging');
+import { Pool } from 'pg';
+import { MongoClient } from 'mongodb';
+import Redis from 'redis';
+import { logger } from './logging.js';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Database connections
 let postgresPool = null;
@@ -105,8 +112,6 @@ const initPostgreSQL = async() => {
 // Initialize database schema
 const initializeSchema = async() => {
   try {
-    const fs = require('fs');
-    const path = require('path');
     
     // Read schema file
     const schemaPath = path.join(__dirname, '..', 'schema.sql');
@@ -266,7 +271,7 @@ const query = async(text, params = [], options = {}) => {
   const start = Date.now();
   let client = null;
   const timeout = options.timeout || 15000; // Default 15s timeout
-  const queryId = options.queryId || `query_${Date.now()}_${require('crypto').randomBytes(6).toString('hex')}`;
+  const queryId = options.queryId || `query_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
 
   try {
     // Get client from pool with timeout

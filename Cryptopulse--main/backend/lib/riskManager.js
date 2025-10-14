@@ -17,10 +17,10 @@
  * - Threat detection and anomaly monitoring
  */
 
-const { logger } = require('./logging');
-const { User, Trade, TradingStrategy, ExchangeConfig } = require('./database');
-const { performance } = require('./performance');
-const riskConfig = require('../config/risk.config');
+import { logger } from './logging.js';
+import { User, Trade, TradingStrategy, ExchangeConfig } from './database.js';
+import { performance } from './performance.js';
+import riskConfig from '../config/risk.config.js';
 
 class RiskManager {
   constructor() {

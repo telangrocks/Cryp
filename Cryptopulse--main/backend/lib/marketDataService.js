@@ -3,9 +3,9 @@
 // =============================================================================
 // Comprehensive market data integration with real exchange APIs
 
-const axios = require('axios');
-const WebSocket = require('ws');
-const { logger } = require('./logging');
+import axios from 'axios';
+import WebSocket from 'ws';
+import { logger } from './logging.js';
 
 class MarketDataService {
   constructor() {

@@ -3,10 +3,10 @@
 // =============================================================================
 // JWT authentication, password hashing, and authorization middleware
 
-const jwt = require('jsonwebtoken');
-const { hash, compare } = require('@node-rs/bcrypt');
-const crypto = require('crypto');
-const { logger } = require('./logging');
+import jwt from 'jsonwebtoken';
+import { hash, compare } from '@node-rs/bcrypt';
+import crypto from 'crypto';
+import { logger } from './logging.js';
 
 // JWT configuration
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -123,7 +123,7 @@ const generateTokens = (payload) => {
   const enhancedPayload = {
     ...payload,
     iat: Math.floor(Date.now() / 1000),
-    jti: require('crypto').randomUUID(), // Unique token identifier
+    jti: crypto.randomUUID(), // Unique token identifier
     iss: 'cryptopulse-api',
     aud: 'cryptopulse-client',
     version: '2.0.0'
@@ -384,7 +384,7 @@ const SessionManager = {
 
     try {
       // Store session in Redis if available
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -422,7 +422,7 @@ const SessionManager = {
         return null;
       }
 
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -470,7 +470,7 @@ const SessionManager = {
     }
 
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -508,7 +508,7 @@ const SessionManager = {
     }
 
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -679,7 +679,7 @@ const tokenBlacklist = {
     }
 
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -708,7 +708,7 @@ const tokenBlacklist = {
     }
 
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -732,7 +732,7 @@ const tokenBlacklist = {
     }
 
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
@@ -753,7 +753,7 @@ const tokenBlacklist = {
   // Clear all blacklisted tokens (for testing purposes)
   async clear() {
     try {
-      const { getRedisSafe } = require('./database');
+      const { getRedisSafe } = await import('./database.js');
       const redis = getRedisSafe();
 
       if (redis) {
