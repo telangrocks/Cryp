@@ -1,0 +1,93 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryptopulse-network-policy
+  namespace: cryptopulse-prod
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cryptopulse
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from frontend to backend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cryptopulse-frontend
+    ports:
+    - protocol: TCP
+      port: 1337
+  # Allow ingress from nginx to frontend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx-ingress
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  # Allow egress to databases
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mongodb
+    ports:
+    - protocol: TCP
+      port: 27017
+  # Allow egress to external APIs (crypto exchanges)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryptopulse-frontend-network-policy
+  namespace: cryptopulse-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: cryptopulse-frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from nginx
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx-ingress
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  # Allow egress to backend
+  - to:
+    - podSelector:
+        matchLabels:
+          app: cryptopulse-backend
+    ports:
+    - protocol: TCP
+      port: 1337
+  # Allow egress to external APIs
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443

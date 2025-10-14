@@ -251,7 +251,7 @@ services:
   # Backend API - Primary Instance
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile.production
       args:
         NODE_ENV: production
@@ -336,7 +336,7 @@ services:
   # Backend API - Secondary Instance
   backend-2:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile.production
       args:
         NODE_ENV: production
@@ -410,7 +410,7 @@ services:
   # Frontend Application
   frontend:
     build:
-      context: ./frontend
+      context: ../frontend
       dockerfile: Dockerfile.production
       args:
         NODE_ENV: production
@@ -460,7 +460,7 @@ services:
   # Cloud Services
   cloud:
     build:
-      context: ./cloud
+      context: ../cloud
       dockerfile: Dockerfile.production
       args:
         NODE_ENV: production

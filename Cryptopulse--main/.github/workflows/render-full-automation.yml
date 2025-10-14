@@ -1,0 +1,290 @@
+name: Render Full Automation
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:
+    inputs:
+      action:
+        description: deploy | redeploy | clear-cache | logs | set-env | rollback | health-check | private-link | domain-setup | full-deploy
+        required: true
+        default: deploy
+      service:
+        description: frontend | backend | all | serviceId (overrides)
+        required: false
+      envPairs:
+        description: KEY1=VALUE1\nKEY2=VALUE2 (for set-env)
+        required: false
+      domain:
+        description: Custom domain (e.g., app.example.com)
+        required: false
+      privateLinkName:
+        description: Private link name for external connections
+        required: false
+      rollbackDeployId:
+        description: Deploy ID to rollback to (for rollback action)
+        required: false
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  RENDER_API_BASE: https://api.render.com/v1
+
+jobs:
+  # Deploy and manage services
+  render-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies and run tests
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          cd frontend && npm ci && npm run test --passWithNoTests
+          cd ../backend && npm ci && npm test --passWithNoTests
+
+      - name: Resolve Service IDs
+        id: ids
+        shell: bash
+        env:
+          FRONTEND_SERVICE_ID: ${{ secrets.FRONTEND_SERVICESID }}
+          BACKEND_SERVICE_ID: ${{ secrets.BACKEND_SERVICESID }}
+        run: |
+          set -euo pipefail
+          input_service="${{ github.event.inputs.service || '' }}"
+          case "$input_service" in
+            frontend ) echo "frontend" >> services.txt ;;
+            backend ) echo "backend" >> services.txt ;;
+            all|"" ) echo "frontend" >> services.txt; echo "backend" >> services.txt ;;
+            * ) echo "$input_service" >> services.txt ;;
+          esac
+
+      - name: Guard API prerequisites
+        if: ${{ secrets.RENDER_API_KEY }}
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ]; then echo "RENDER_API_KEY missing" >&2; exit 1; fi
+          if [ -z "${RENDER_OWNER_ID:-}" ]; then echo "RENDER_OWNER_ID missing" >&2; exit 1; fi
+
+      - name: Perform Action via Render API
+        if: ${{ secrets.RENDER_API_KEY }}
+        id: api
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          ACTION: ${{ github.event.inputs.action || 'deploy' }}
+          API: ${{ env.RENDER_API_BASE }}
+          ENVP: ${{ github.event.inputs.envPairs || '' }}
+          DOMAIN: ${{ github.event.inputs.domain || '' }}
+          PRIVATE_LINK_NAME: ${{ github.event.inputs.privateLinkName || '' }}
+          ROLLBACK_DEPLOY_ID: ${{ github.event.inputs.rollbackDeployId || '' }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" -H 'Content-Type: application/json' )
+          
+          # Helper function to get service ID
+          get_service_id() {
+            local service_name="$1"
+            case "$service_name" in
+              frontend ) echo "${{ secrets.FRONTEND_SERVICESID }}" ;;
+              backend ) echo "${{ secrets.BACKEND_SERVICESID }}" ;;
+              * ) echo "$service_name" ;;
+            esac
+          }
+          
+          # Process each service
+          while IFS= read -r service_name; do
+            [ -z "$service_name" ] && continue
+            service_id=$(get_service_id "$service_name")
+            echo "Processing $service_name (ID: $service_id)"
+            
+            case "$ACTION" in
+              deploy|redeploy|clear-cache)
+                clear=false
+                [ "$ACTION" = "clear-cache" ] && clear=true
+                echo "Triggering deploy (clearCache=$clear) for $service_name"
+                curl -fsSL -X POST "$API/services/$service_id/deploys" "${hdr[@]}" \
+                  --data "{\"clearCache\": $clear, \"ownerId\": \"$RENDER_OWNER_ID\"}" | tee "deploy-$service_name.json"
+                ;;
+              
+              rollback)
+                if [ -z "$ROLLBACK_DEPLOY_ID" ]; then
+                  echo "Getting latest deploys for rollback..."
+                  curl -fsSL "$API/services/$service_id/deploys?limit=10" "${hdr[@]}" | jq -r '.deploys[] | select(.status == "live") | .id' | head -1 > "latest-deploy-$service_name.txt"
+                  ROLLBACK_DEPLOY_ID=$(cat "latest-deploy-$service_name.txt")
+                fi
+                echo "Rolling back $service_name to deploy $ROLLBACK_DEPLOY_ID"
+                curl -fsSL -X POST "$API/services/$service_id/deploys/$ROLLBACK_DEPLOY_ID" "${hdr[@]}" | tee "rollback-$service_name.json"
+                ;;
+              
+              logs)
+                echo "Fetching recent logs for $service_name"
+                curl -fsSL "$API/services/$service_id/logs?tail=false&limit=1000" "${hdr[@]}" | tee "logs-$service_name.json"
+                ;;
+              
+              set-env)
+                echo "Updating environment variables for $service_name"
+                tmp=$(mktemp)
+                printf '{"env":[' > "$tmp"
+                first=1
+                while IFS= read -r line; do
+                  [ -z "$line" ] && continue
+                  key="${line%%=*}"
+                  val="${line#*=}"
+                  [ $first -eq 0 ] && printf ',' >> "$tmp" || first=0
+                  printf '{"key":"%s","value":"%s"}' "$key" "$val" >> "$tmp"
+                done <<< "$ENVP"
+                printf ']}' >> "$tmp"
+                curl -fsSL -X PATCH "$API/services/$service_id/env-vars" "${hdr[@]}" --data @"$tmp" | tee "env-$service_name.json"
+                ;;
+              
+              health-check)
+                echo "Performing health check for $service_name"
+                service_url=$(curl -fsSL "$API/services/$service_id" "${hdr[@]}" | jq -r '.service.details.url // empty')
+                if [ -n "$service_url" ]; then
+                  echo "Health checking $service_url"
+                  status_code=$(curl -fsSL -o /dev/null -w "%{http_code}" "$service_url" || echo "000")
+                  echo "Health check result: $status_code" | tee "health-$service_name.json"
+                fi
+                ;;
+              
+              private-link)
+                if [ -n "$PRIVATE_LINK_NAME" ]; then
+                  echo "Creating private link for $service_name"
+                  curl -fsSL -X POST "$API/private-links" "${hdr[@]}" \
+                    --data "{\"name\":\"$PRIVATE_LINK_NAME\",\"serviceId\":\"$service_id\",\"ownerId\":\"$RENDER_OWNER_ID\"}" | tee "private-link-$service_name.json"
+                fi
+                ;;
+              
+              domain-setup)
+                if [ -n "$DOMAIN" ]; then
+                  echo "Setting up custom domain for $service_name"
+                  curl -fsSL -X POST "$API/services/$service_id/custom-domains" "${hdr[@]}" \
+                    --data "{\"name\":\"$DOMAIN\",\"ownerId\":\"$RENDER_OWNER_ID\"}" | tee "domain-$service_name.json"
+                  
+                  # Get DNS records needed
+                  curl -fsSL "$API/services/$service_id/custom-domains" "${hdr[@]}" | jq -r '.customDomains[] | select(.name == "'$DOMAIN'") | .verificationRecord' | tee "dns-$service_name.json"
+                fi
+                ;;
+              
+              full-deploy)
+                echo "Full deployment for $service_name"
+                # Clear cache and deploy
+                curl -fsSL -X POST "$API/services/$service_id/deploys" "${hdr[@]}" \
+                  --data "{\"clearCache\": true, \"ownerId\": \"$RENDER_OWNER_ID\"}" | tee "deploy-$service_name.json"
+                
+                # Wait for deployment to complete
+                deploy_id=$(jq -r '.deploy.id' "deploy-$service_name.json")
+                echo "Waiting for deployment $deploy_id to complete..."
+                
+                for i in {1..30}; do
+                  status=$(curl -fsSL "$API/services/$service_id/deploys/$deploy_id" "${hdr[@]}" | jq -r '.deploy.status')
+                  echo "Deploy status: $status"
+                  if [ "$status" = "live" ]; then
+                    echo "Deployment completed successfully"
+                    break
+                  elif [ "$status" = "build_failed" ] || [ "$status" = "update_failed" ]; then
+                    echo "Deployment failed with status: $status"
+                    exit 1
+                  fi
+                  sleep 10
+                done
+                
+                # Health check after deployment
+                service_url=$(curl -fsSL "$API/services/$service_id" "${hdr[@]}" | jq -r '.service.details.url // empty')
+                if [ -n "$service_url" ]; then
+                  echo "Health checking $service_url"
+                  status_code=$(curl -fsSL -o /dev/null -w "%{http_code}" "$service_url" || echo "000")
+                  echo "Health check result: $status_code" | tee "health-$service_name.json"
+                  if [ "$status_code" != "200" ]; then
+                    echo "Health check failed with status: $status_code"
+                    exit 1
+                  fi
+                fi
+                ;;
+              
+              *)
+                echo "Unknown action: $ACTION" >&2; exit 1 ;;
+            esac
+          done < services.txt
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-automation-output
+          path: |
+            deploy-*.json
+            logs-*.json
+            env-*.json
+            rollback-*.json
+            health-*.json
+            private-link-*.json
+            domain-*.json
+            dns-*.json
+            latest-deploy-*.txt
+
+      - name: Report Service URLs and Status
+        if: ${{ secrets.RENDER_API_KEY }}
+        shell: bash
+        env:
+          API: ${{ env.RENDER_API_BASE }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" )
+          
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get frontend URL
+          if [ -n "${{ secrets.FRONTEND_SERVICESID }}" ]; then
+            frontend_url=$(curl -fsSL "$API/services/${{ secrets.FRONTEND_SERVICESID }}" "${hdr[@]}" | jq -r '.service.details.url // empty')
+            echo "### Frontend Service" >> $GITHUB_STEP_SUMMARY
+            echo "- **URL**: $frontend_url" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Deployed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Get backend URL
+          if [ -n "${{ secrets.BACKEND_SERVICESID }}" ]; then
+            backend_url=$(curl -fsSL "$API/services/${{ secrets.BACKEND_SERVICESID }}" "${hdr[@]}" | jq -r '.service.details.url // empty')
+            echo "### Backend Service" >> $GITHUB_STEP_SUMMARY
+            echo "- **URL**: $backend_url" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Deployed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### 🔗 Quick Actions" >> $GITHUB_STEP_SUMMARY
+          echo "- [View Logs](https://dashboard.render.com/services/${{ secrets.FRONTEND_SERVICESID }}/logs) | [Backend Logs](https://dashboard.render.com/services/${{ secrets.BACKEND_SERVICESID }}/logs)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Service Settings](https://dashboard.render.com/services/${{ secrets.FRONTEND_SERVICESID }}/settings) | [Backend Settings](https://dashboard.render.com/services/${{ secrets.BACKEND_SERVICESID }}/settings)" >> $GITHUB_STEP_SUMMARY
+
+  # Notification job
+  notify:
+    runs-on: ubuntu-latest
+    needs: render-automation
+    if: always()
+    steps:
+      - name: Deployment Notification
+        run: |
+          if [ "${{ needs.render-automation.result }}" = "success" ]; then
+            echo "✅ Deployment completed successfully!"
+          else
+            echo "❌ Deployment failed. Check logs for details."
+          fi

@@ -1,0 +1,261 @@
+name: Domain Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: setup | verify | ssl | delete | list
+        required: true
+        default: setup
+      domain:
+        description: Custom domain (e.g., app.example.com)
+        required: true
+      targetService:
+        description: frontend | backend | serviceId
+        required: false
+      sslProvider:
+        description: render | letsencrypt | custom
+        required: false
+        default: render
+
+permissions:
+  contents: read
+
+env:
+  RENDER_API_BASE: https://api.render.com/v1
+
+jobs:
+  domain-management:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard API prerequisites
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ]; then echo "RENDER_API_KEY missing" >&2; exit 1; fi
+          if [ -z "${RENDER_OWNER_ID:-}" ]; then echo "RENDER_OWNER_ID missing" >&2; exit 1; fi
+
+      - name: Resolve Service ID
+        id: service
+        shell: bash
+        env:
+          FRONTEND_SERVICE_ID: ${{ secrets.FRONTEND_SERVICESID }}
+          BACKEND_SERVICE_ID: ${{ secrets.BACKEND_SERVICESID }}
+        run: |
+          set -euo pipefail
+          target="${{ github.event.inputs.targetService || 'frontend' }}"
+          case "$target" in
+            frontend ) sid="$FRONTEND_SERVICE_ID" ;;
+            backend ) sid="$BACKEND_SERVICE_ID" ;;
+            * ) sid="$target" ;;
+          esac
+          if [ -z "${sid:-}" ]; then
+            echo "Service ID not resolved. Provide target service or service ID." >&2
+            exit 1
+          fi
+          echo "service_id=$sid" >> $GITHUB_OUTPUT
+
+      - name: Manage Domain
+        id: domain
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          SERVICE_ID: ${{ steps.service.outputs.service_id }}
+          ACTION: ${{ github.event.inputs.action }}
+          DOMAIN: ${{ github.event.inputs.domain }}
+          SSL_PROVIDER: ${{ github.event.inputs.sslProvider }}
+          API: ${{ env.RENDER_API_BASE }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" -H 'Content-Type: application/json' )
+          
+          case "$ACTION" in
+            setup)
+              echo "Setting up custom domain: $DOMAIN"
+              
+              # Create custom domain
+              curl -fsSL -X POST "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" \
+                --data "{\"name\":\"$DOMAIN\",\"ownerId\":\"$RENDER_OWNER_ID\"}" | tee domain-setup.json
+              
+              domain_id=$(jq -r '.customDomain.id' domain-setup.json)
+              echo "Custom domain created with ID: $domain_id"
+              echo "domain_id=$domain_id" >> $GITHUB_OUTPUT
+              
+              # Get DNS records needed
+              echo "Fetching DNS records..."
+              curl -fsSL "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" | \
+                jq -r --arg domain "$DOMAIN" '.customDomains[] | select(.name == $domain)' | tee domain-details.json
+              
+              # Extract verification record
+              verification_record=$(jq -r '.verificationRecord // empty' domain-details.json)
+              echo "verification_record=$verification_record" >> $GITHUB_OUTPUT
+              
+              if [ -n "$verification_record" ]; then
+                echo "DNS verification record: $verification_record" > dns-instructions.txt
+                echo "Please add this DNS record to your domain registrar:" >> dns-instructions.txt
+                echo "" >> dns-instructions.txt
+                echo "$verification_record" >> dns-instructions.txt
+                echo "" >> dns-instructions.txt
+                echo "After adding the DNS record, wait for propagation (usually 5-30 minutes), then run this workflow again with action: verify" >> dns-instructions.txt
+              fi
+              ;;
+            
+            verify)
+              echo "Verifying domain: $DOMAIN"
+              
+              # Get domain details
+              curl -fsSL "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" | \
+                jq -r --arg domain "$DOMAIN" '.customDomains[] | select(.name == $domain)' | tee domain-status.json
+              
+              domain_status=$(jq -r '.status' domain-status.json)
+              domain_id=$(jq -r '.id' domain-status.json)
+              
+              echo "Domain status: $domain_status"
+              
+              if [ "$domain_status" = "verified" ]; then
+                echo "✅ Domain is verified!"
+                echo "verified=true" >> $GITHUB_OUTPUT
+                
+                # Enable SSL if not already enabled
+                echo "Enabling SSL..."
+                curl -fsSL -X POST "$API/services/$SERVICE_ID/custom-domains/$domain_id/ssl" "${hdr[@]}" \
+                  --data "{\"provider\":\"$SSL_PROVIDER\"}" | tee ssl-setup.json
+              else
+                echo "❌ Domain not yet verified. Status: $domain_status"
+                echo "verified=false" >> $GITHUB_OUTPUT
+                
+                # Check DNS propagation
+                echo "Checking DNS propagation..."
+                if command -v dig >/dev/null 2>&1; then
+                  dig +short "$DOMAIN" | tee dns-lookup.txt
+                else
+                  nslookup "$DOMAIN" | tee dns-lookup.txt
+                fi
+              fi
+              ;;
+            
+            ssl)
+              echo "Managing SSL for domain: $DOMAIN"
+              
+              # Get domain ID
+              domain_id=$(curl -fsSL "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" | \
+                jq -r --arg domain "$DOMAIN" '.customDomains[] | select(.name == $domain) | .id')
+              
+              if [ -n "$domain_id" ] && [ "$domain_id" != "null" ]; then
+                echo "Setting up SSL with provider: $SSL_PROVIDER"
+                curl -fsSL -X POST "$API/services/$SERVICE_ID/custom-domains/$domain_id/ssl" "${hdr[@]}" \
+                  --data "{\"provider\":\"$SSL_PROVIDER\"}" | tee ssl-setup.json
+                
+                echo "SSL setup initiated for domain ID: $domain_id"
+              else
+                echo "Domain not found: $DOMAIN"
+                exit 1
+              fi
+              ;;
+            
+            list)
+              echo "Listing custom domains for service: $SERVICE_ID"
+              curl -fsSL "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" | tee domains-list.json
+              ;;
+            
+            delete)
+              echo "Deleting domain: $DOMAIN"
+              
+              # Get domain ID
+              domain_id=$(curl -fsSL "$API/services/$SERVICE_ID/custom-domains" "${hdr[@]}" | \
+                jq -r --arg domain "$DOMAIN" '.customDomains[] | select(.name == $domain) | .id')
+              
+              if [ -n "$domain_id" ] && [ "$domain_id" != "null" ]; then
+                curl -fsSL -X DELETE "$API/services/$SERVICE_ID/custom-domains/$domain_id" "${hdr[@]}" | tee domain-delete.json
+                echo "Domain deleted: $domain_id"
+              else
+                echo "Domain not found: $DOMAIN"
+                exit 1
+              fi
+              ;;
+            
+            *)
+              echo "Unknown action: $ACTION" >&2; exit 1 ;;
+          esac
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: domain-management-output
+          path: |
+            domain-setup.json
+            domain-details.json
+            domain-status.json
+            domain-delete.json
+            ssl-setup.json
+            domains-list.json
+            dns-instructions.txt
+            dns-lookup.txt
+
+      - name: Report Domain Status
+        if: always()
+        shell: bash
+        env:
+          ACTION: ${{ github.event.inputs.action }}
+          DOMAIN: ${{ github.event.inputs.domain }}
+          VERIFIED: ${{ steps.domain.outputs.verified }}
+          VERIFICATION_RECORD: ${{ steps.domain.outputs.verification_record }}
+        run: |
+          echo "## 🌐 Domain Management" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Domain**: $DOMAIN" >> $GITHUB_STEP_SUMMARY
+          echo "**Action**: $ACTION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          case "$ACTION" in
+            setup)
+              if [ -f domain-setup.json ]; then
+                domain_id=$(jq -r '.customDomain.id' domain-setup.json)
+                echo "✅ Custom domain setup initiated!" >> $GITHUB_STEP_SUMMARY
+                echo "- **Domain ID**: $domain_id" >> $GITHUB_STEP_SUMMARY
+                
+                if [ -n "$VERIFICATION_RECORD" ]; then
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### 📋 DNS Setup Required" >> $GITHUB_STEP_SUMMARY
+                  echo "Add this DNS record to your domain registrar:" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "```" >> $GITHUB_STEP_SUMMARY
+                  echo "$VERIFICATION_RECORD" >> $GITHUB_STEP_SUMMARY
+                  echo "```" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "After adding the DNS record, run this workflow again with **action: verify**" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+              ;;
+            verify)
+              if [ "$VERIFIED" = "true" ]; then
+                echo "✅ Domain verified and SSL enabled!" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "Your domain is now live at: **https://$DOMAIN**" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "⏳ Domain verification pending..." >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "DNS propagation may take 5-30 minutes. Please wait and try again." >> $GITHUB_STEP_SUMMARY
+              fi
+              ;;
+            ssl)
+              echo "🔒 SSL setup initiated for $DOMAIN" >> $GITHUB_STEP_SUMMARY
+              ;;
+            delete)
+              echo "🗑️ Domain deleted successfully!" >> $GITHUB_STEP_SUMMARY
+              ;;
+            list)
+              if [ -f domains-list.json ]; then
+                echo "📋 Custom domains:" >> $GITHUB_STEP_SUMMARY
+                jq -r '.customDomains[] | "- **\(.name)**: \(.status)"' domains-list.json >> $GITHUB_STEP_SUMMARY
+              fi
+              ;;
+          esac

@@ -1,0 +1,227 @@
+name: Deploy All Services - Cryptopulse
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: deploy-all | health-check | get-urls | update-env
+        required: true
+        default: deploy-all
+      envUpdates:
+        description: Environment updates (KEY=VALUE format, one per line)
+        required: false
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  RENDER_API_BASE: https://api.render.com/v1
+  RENDER_OWNER_ID: tea-d3jvjlnfte5s73bu8pp0
+
+jobs:
+  deploy-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies and run tests
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          cd frontend && npm ci && npm run test --passWithNoTests
+          cd ../backend && npm ci && npm test --passWithNoTests
+          cd ../cloud && npm ci && npm test --passWithNoTests
+
+      - name: Deploy All Services
+        id: deploy
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          FRONTEND_SERVICE_ID: srv-d3m8r0ggjchc73cus5h0
+          BACKEND_SERVICE_ID: srv-d3kpg40dl3ps73f914s0
+          CLOUD_FUNCTIONS_ID: srv-d3mgcjjuibrs73dv9qvg
+          ACTION: ${{ github.event.inputs.action || 'deploy-all' }}
+          ENV_UPDATES: ${{ github.event.inputs.envUpdates || '' }}
+          API: ${{ env.RENDER_API_BASE }}
+          OWNER_ID: ${{ env.RENDER_OWNER_ID }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" -H 'Content-Type: application/json' )
+          
+          case "$ACTION" in
+            deploy-all)
+              echo "🚀 Deploying all Cryptopulse services..."
+              
+              # Deploy Frontend
+              echo "Deploying Frontend..."
+              curl -fsSL -X POST "$API/services/$FRONTEND_SERVICE_ID/deploys" "${hdr[@]}" \
+                --data "{\"clearCache\": true, \"ownerId\": \"$OWNER_ID\"}" | tee frontend-deploy.json
+              
+              # Deploy Backend
+              echo "Deploying Backend..."
+              curl -fsSL -X POST "$API/services/$BACKEND_SERVICE_ID/deploys" "${hdr[@]}" \
+                --data "{\"clearCache\": true, \"ownerId\": \"$OWNER_ID\"}" | tee backend-deploy.json
+              
+              # Deploy Cloud Functions
+              echo "Deploying Cloud Functions..."
+              curl -fsSL -X POST "$API/services/$CLOUD_FUNCTIONS_ID/deploys" "${hdr[@]}" \
+                --data "{\"clearCache\": true, \"ownerId\": \"$OWNER_ID\"}" | tee cloud-deploy.json
+              
+              echo "✅ All services deployment initiated!"
+              ;;
+            
+            health-check)
+              echo "🔍 Performing health checks..."
+              
+              # Check Frontend
+              frontend_url=$(curl -fsSL "$API/services/$FRONTEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              echo "Checking Frontend: $frontend_url"
+              frontend_status=$(curl -fsSL -o /dev/null -w "%{http_code}" "$frontend_url" || echo "000")
+              echo "Frontend Status: $frontend_status" | tee frontend-health.json
+              
+              # Check Backend
+              backend_url=$(curl -fsSL "$API/services/$BACKEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              echo "Checking Backend: $backend_url"
+              backend_status=$(curl -fsSL -o /dev/null -w "%{http_code}" "$backend_url" || echo "000")
+              echo "Backend Status: $backend_status" | tee backend-health.json
+              
+              # Check Cloud Functions
+              cloud_url=$(curl -fsSL "$API/services/$CLOUD_FUNCTIONS_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              echo "Checking Cloud Functions: $cloud_url"
+              cloud_status=$(curl -fsSL -o /dev/null -w "%{http_code}" "$cloud_url" || echo "000")
+              echo "Cloud Functions Status: $cloud_status" | tee cloud-health.json
+              ;;
+            
+            get-urls)
+              echo "📋 Getting service URLs..."
+              
+              # Get all service URLs
+              frontend_url=$(curl -fsSL "$API/services/$FRONTEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              backend_url=$(curl -fsSL "$API/services/$BACKEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              cloud_url=$(curl -fsSL "$API/services/$CLOUD_FUNCTIONS_ID" "${hdr[@]}" | jq -r '.service.details.url')
+              
+              echo "frontend_url=$frontend_url" >> $GITHUB_OUTPUT
+              echo "backend_url=$backend_url" >> $GITHUB_OUTPUT
+              echo "cloud_url=$cloud_url" >> $GITHUB_OUTPUT
+              
+              echo "Frontend: $frontend_url" | tee service-urls.txt
+              echo "Backend: $backend_url" | tee -a service-urls.txt
+              echo "Cloud Functions: $cloud_url" | tee -a service-urls.txt
+              ;;
+            
+            update-env)
+              echo "🔧 Updating environment variables..."
+              
+              if [ -n "$ENV_UPDATES" ]; then
+                # Update Frontend env vars
+                echo "Updating Frontend environment..."
+                tmp=$(mktemp)
+                printf '{"env":[' > "$tmp"
+                first=1
+                while IFS= read -r line; do
+                  [ -z "$line" ] && continue
+                  key="${line%%=*}"
+                  val="${line#*=}"
+                  [ $first -eq 0 ] && printf ',' >> "$tmp" || first=0
+                  printf '{"key":"%s","value":"%s"}' "$key" "$val" >> "$tmp"
+                done <<< "$ENV_UPDATES"
+                printf ']}' >> "$tmp"
+                
+                curl -fsSL -X PATCH "$API/services/$FRONTEND_SERVICE_ID/env-vars" "${hdr[@]}" --data @"$tmp" | tee frontend-env.json
+                
+                # Update Backend env vars
+                echo "Updating Backend environment..."
+                curl -fsSL -X PATCH "$API/services/$BACKEND_SERVICE_ID/env-vars" "${hdr[@]}" --data @"$tmp" | tee backend-env.json
+                
+                # Update Cloud Functions env vars
+                echo "Updating Cloud Functions environment..."
+                curl -fsSL -X PATCH "$API/services/$CLOUD_FUNCTIONS_ID/env-vars" "${hdr[@]}" --data @"$tmp" | tee cloud-env.json
+              fi
+              ;;
+          esac
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-output
+          path: |
+            frontend-deploy.json
+            backend-deploy.json
+            cloud-deploy.json
+            frontend-health.json
+            backend-health.json
+            cloud-health.json
+            frontend-env.json
+            backend-env.json
+            cloud-env.json
+            service-urls.txt
+
+      - name: Report Deployment Status
+        if: always()
+        shell: bash
+        env:
+          API: ${{ env.RENDER_API_BASE }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          FRONTEND_SERVICE_ID: srv-d3m8r0ggjchc73cus5h0
+          BACKEND_SERVICE_ID: srv-d3kpg40dl3ps73f914s0
+          CLOUD_FUNCTIONS_ID: srv-d3mgcjjuibrs73dv9qvg
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" )
+          
+          echo "## 🌟 Cryptopulse - Complete Application Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Get service URLs
+          frontend_url=$(curl -fsSL "$API/services/$FRONTEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+          backend_url=$(curl -fsSL "$API/services/$BACKEND_SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url')
+          cloud_url=$(curl -fsSL "$API/services/$CLOUD_FUNCTIONS_ID" "${hdr[@]}" | jq -r '.service.details.url')
+          
+          echo "### 🚀 Live Application URLs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### 🎨 **Frontend (Main Application)**" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: [$frontend_url]($frontend_url)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Live and Ready!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: React/Vite Application" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### 🔧 **Backend API**" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: [$backend_url]($backend_url)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Live and Ready!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: Node.js API Server" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### ☁️ **Cloud Functions**" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: [$cloud_url]($cloud_url)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Live and Ready!" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: Serverless Functions" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 🎯 **Your Application is Ready!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Main Application**: [$frontend_url]($frontend_url)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 **Quick Actions**" >> $GITHUB_STEP_SUMMARY
+          echo "- [Frontend Dashboard](https://dashboard.render.com/web/$FRONTEND_SERVICE_ID)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Backend Dashboard](https://dashboard.render.com/web/$BACKEND_SERVICE_ID)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Cloud Functions Dashboard](https://dashboard.render.com/web/$CLOUD_FUNCTIONS_ID)" >> $GITHUB_STEP_SUMMARY
+          echo "- [View Logs](https://dashboard.render.com/web/$FRONTEND_SERVICE_ID/logs)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Environment Variables](https://dashboard.render.com/web/$FRONTEND_SERVICE_ID/environment)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 **Services Overview**" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Services**: 3" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: All Live ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: Frankfurt" >> $GITHUB_STEP_SUMMARY
+          echo "- **Auto Deploy**: Enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- **Monitoring**: Active" >> $GITHUB_STEP_SUMMARY

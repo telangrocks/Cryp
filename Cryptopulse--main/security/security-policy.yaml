@@ -1,0 +1,71 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: cryptopulse-security-policy
+  annotations:
+    policies.kyverno.io/title: CryptoPulse Security Policy
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Enforces security best practices for CryptoPulse pods.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: check-image-registry
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - cryptopulse-prod
+          - cryptopulse-staging
+    validate:
+      message: "Only images from approved registries are allowed"
+      pattern:
+        spec:
+          containers:
+          - image: "ghcr.io/cryptopulse/*"
+  
+  - name: check-non-root-user
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - cryptopulse-prod
+          - cryptopulse-staging
+    validate:
+      message: "Container must run as non-root user"
+      pattern:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+          containers:
+          - securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+  
+  - name: check-resource-limits
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - cryptopulse-prod
+          - cryptopulse-staging
+    validate:
+      message: "Resource limits are required"
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+              requests:
+                memory: "?*"
+                cpu: "?*"

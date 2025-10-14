@@ -1,0 +1,205 @@
+name: Private Links Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: create | list | delete | status
+        required: true
+        default: create
+      privateLinkName:
+        description: Name for the private link
+        required: true
+      targetService:
+        description: frontend | backend | serviceId
+        required: false
+      externalEndpoint:
+        description: External endpoint to connect to (e.g., database, API)
+        required: false
+      connectionType:
+        description: database | api | storage | custom
+        required: false
+        default: api
+
+permissions:
+  contents: read
+
+env:
+  RENDER_API_BASE: https://api.render.com/v1
+
+jobs:
+  private-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard API prerequisites
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ]; then echo "RENDER_API_KEY missing" >&2; exit 1; fi
+          if [ -z "${RENDER_OWNER_ID:-}" ]; then echo "RENDER_OWNER_ID missing" >&2; exit 1; fi
+
+      - name: Resolve Service ID
+        id: service
+        shell: bash
+        env:
+          FRONTEND_SERVICE_ID: ${{ secrets.FRONTEND_SERVICESID }}
+          BACKEND_SERVICE_ID: ${{ secrets.BACKEND_SERVICESID }}
+        run: |
+          set -euo pipefail
+          target="${{ github.event.inputs.targetService || 'backend' }}"
+          case "$target" in
+            frontend ) sid="$FRONTEND_SERVICE_ID" ;;
+            backend ) sid="$BACKEND_SERVICE_ID" ;;
+            * ) sid="$target" ;;
+          esac
+          if [ -z "${sid:-}" ]; then
+            echo "Service ID not resolved. Provide target service or service ID." >&2
+            exit 1
+          fi
+          echo "service_id=$sid" >> $GITHUB_OUTPUT
+
+      - name: Manage Private Links
+        id: private
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          SERVICE_ID: ${{ steps.service.outputs.service_id }}
+          ACTION: ${{ github.event.inputs.action }}
+          LINK_NAME: ${{ github.event.inputs.privateLinkName }}
+          EXTERNAL_ENDPOINT: ${{ github.event.inputs.externalEndpoint }}
+          CONNECTION_TYPE: ${{ github.event.inputs.connectionType }}
+          API: ${{ env.RENDER_API_BASE }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" -H 'Content-Type: application/json' )
+          
+          case "$ACTION" in
+            create)
+              echo "Creating private link: $LINK_NAME"
+              
+              # Create private link
+              payload=$(cat <<EOF
+              {
+                "name": "$LINK_NAME",
+                "serviceId": "$SERVICE_ID",
+                "ownerId": "$RENDER_OWNER_ID",
+                "connectionType": "$CONNECTION_TYPE"
+              }
+              EOF
+              )
+              
+              if [ -n "$EXTERNAL_ENDPOINT" ]; then
+                payload=$(echo "$payload" | jq --arg endpoint "$EXTERNAL_ENDPOINT" '. + {externalEndpoint: $endpoint}')
+              fi
+              
+              curl -fsSL -X POST "$API/private-links" "${hdr[@]}" \
+                --data "$payload" | tee private-link.json
+              
+              link_id=$(jq -r '.privateLink.id' private-link.json)
+              echo "Private link created with ID: $link_id"
+              echo "link_id=$link_id" >> $GITHUB_OUTPUT
+              
+              # Get connection details
+              echo "Fetching connection details..."
+              curl -fsSL "$API/private-links/$link_id" "${hdr[@]}" | tee private-link-details.json
+              ;;
+            
+            list)
+              echo "Listing private links for service: $SERVICE_ID"
+              curl -fsSL "$API/services/$SERVICE_ID/private-links" "${hdr[@]}" | tee private-links-list.json
+              ;;
+            
+            status)
+              echo "Checking private link status: $LINK_NAME"
+              # Find link by name
+              link_id=$(curl -fsSL "$API/services/$SERVICE_ID/private-links" "${hdr[@]}" | \
+                jq -r --arg name "$LINK_NAME" '.privateLinks[] | select(.name == $name) | .id')
+              
+              if [ -n "$link_id" ] && [ "$link_id" != "null" ]; then
+                curl -fsSL "$API/private-links/$link_id" "${hdr[@]}" | tee private-link-status.json
+                echo "Private link status retrieved for ID: $link_id"
+              else
+                echo "Private link '$LINK_NAME' not found"
+                exit 1
+              fi
+              ;;
+            
+            delete)
+              echo "Deleting private link: $LINK_NAME"
+              # Find link by name
+              link_id=$(curl -fsSL "$API/services/$SERVICE_ID/private-links" "${hdr[@]}" | \
+                jq -r --arg name "$LINK_NAME" '.privateLinks[] | select(.name == $name) | .id')
+              
+              if [ -n "$link_id" ] && [ "$link_id" != "null" ]; then
+                curl -fsSL -X DELETE "$API/private-links/$link_id" "${hdr[@]}" | tee private-link-delete.json
+                echo "Private link deleted: $link_id"
+              else
+                echo "Private link '$LINK_NAME' not found"
+                exit 1
+              fi
+              ;;
+            
+            *)
+              echo "Unknown action: $ACTION" >&2; exit 1 ;;
+          esac
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-links-output
+          path: |
+            private-link.json
+            private-link-details.json
+            private-links-list.json
+            private-link-status.json
+            private-link-delete.json
+
+      - name: Report Private Link Status
+        if: always()
+        shell: bash
+        env:
+          ACTION: ${{ github.event.inputs.action }}
+          LINK_NAME: ${{ github.event.inputs.privateLinkName }}
+        run: |
+          echo "## 🔗 Private Link Management" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Action**: $ACTION" >> $GITHUB_STEP_SUMMARY
+          echo "**Link Name**: $LINK_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          case "$ACTION" in
+            create)
+              if [ -f private-link.json ]; then
+                link_id=$(jq -r '.privateLink.id' private-link.json)
+                status=$(jq -r '.privateLink.status' private-link.json)
+                echo "✅ Private link created successfully!" >> $GITHUB_STEP_SUMMARY
+                echo "- **Link ID**: $link_id" >> $GITHUB_STEP_SUMMARY
+                echo "- **Status**: $status" >> $GITHUB_STEP_SUMMARY
+                
+                if [ -f private-link-details.json ]; then
+                  endpoint=$(jq -r '.privateLink.externalEndpoint // "N/A"' private-link-details.json)
+                  echo "- **External Endpoint**: $endpoint" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+              ;;
+            status)
+              if [ -f private-link-status.json ]; then
+                status=$(jq -r '.privateLink.status' private-link-status.json)
+                endpoint=$(jq -r '.privateLink.externalEndpoint // "N/A"' private-link-status.json)
+                echo "📊 Private link status:" >> $GITHUB_STEP_SUMMARY
+                echo "- **Status**: $status" >> $GITHUB_STEP_SUMMARY
+                echo "- **External Endpoint**: $endpoint" >> $GITHUB_STEP_SUMMARY
+              fi
+              ;;
+            delete)
+              echo "🗑️ Private link deleted successfully!" >> $GITHUB_STEP_SUMMARY
+              ;;
+          esac

@@ -1,0 +1,152 @@
+name: Render Control
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: deploy | redeploy | clear-cache | logs | set-env
+        required: true
+        default: deploy
+      service:
+        description: frontend | backend | serviceId (overrides)
+        required: false
+      envPairs:
+        description: KEY1=VALUE1\nKEY2=VALUE2 (for set-env)
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  RENDER_API_BASE: https://api.render.com/v1
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve Service IDs
+        id: ids
+        shell: bash
+        env:
+          FRONTEND_SERVICE_ID: ${{ secrets.FRONTEND_SERVICESID }}
+          BACKEND_SERVICE_ID: ${{ secrets.BACKEND_SERVICESID }}
+        run: |
+          set -euo pipefail
+          input_service="${{ github.event.inputs.service || '' }}"
+          case "$input_service" in
+            frontend|"" ) sid="$FRONTEND_SERVICE_ID" ; label=frontend ;;
+            backend ) sid="$BACKEND_SERVICE_ID" ; label=backend ;;
+            * ) sid="$input_service" ; label=custom ;;
+          esac
+          if [ -z "${sid:-}" ]; then
+            echo "Service ID not resolved. Provide FRONTEND/BACKEND_SERVICE_ID secrets or pass a service id via workflow input." >&2
+            exit 1
+          fi
+          echo "service_id=$sid" >> $GITHUB_OUTPUT
+          echo "service_label=$label" >> $GITHUB_OUTPUT
+
+      - name: Maybe Deploy via Deploy Hook (fallback)
+        if: ${{ !secrets.RENDER_API_KEY && (secrets.FRONTEND_DEPLOY_HOOK || secrets.BACKEND_DEPLOY_HOOK) && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') }}
+        shell: bash
+        env:
+          FRONTEND_DEPLOY_HOOK: ${{ secrets.FRONTEND_DEPLOY_HOOK }}
+          BACKEND_DEPLOY_HOOK: ${{ secrets.BACKEND_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          label='${{ steps.ids.outputs.service_label }}'
+          hook=""
+          if [ "$label" = "frontend" ] && [ -n "${FRONTEND_DEPLOY_HOOK:-}" ]; then hook="$FRONTEND_DEPLOY_HOOK"; fi
+          if [ "$label" = "backend" ] && [ -n "${BACKEND_DEPLOY_HOOK:-}" ]; then hook="$BACKEND_DEPLOY_HOOK"; fi
+          if [ -n "$hook" ]; then
+            echo "Triggering deploy via hook for $label"
+            curl -fsSL -X POST "$hook"
+            exit 0
+          fi
+          echo "No hook available; continuing with API path (requires RENDER_API_KEY)."
+
+      - name: Guard API prerequisites
+        if: ${{ secrets.RENDER_API_KEY }}
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ]; then echo "RENDER_API_KEY missing" >&2; exit 1; fi
+          if [ -z "${RENDER_OWNER_ID:-}" ]; then echo "RENDER_OWNER_ID missing" >&2; exit 1; fi
+
+      - name: Perform Action via Render API
+        if: ${{ secrets.RENDER_API_KEY }}
+        id: api
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+          SERVICE_ID: ${{ steps.ids.outputs.service_id }}
+          ACTION: ${{ github.event.inputs.action || 'deploy' }}
+          API: ${{ env.RENDER_API_BASE }}
+          ENVP: ${{ github.event.inputs.envPairs || '' }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" -H 'Content-Type: application/json' )
+          case "$ACTION" in
+            deploy|redeploy|clear-cache)
+              clear=false
+              [ "$ACTION" = "clear-cache" ] && clear=true
+              echo "Triggering deploy (clearCache=$clear) for $SERVICE_ID"
+              curl -fsSL -X POST "$API/services/$SERVICE_ID/deploys" "${hdr[@]}" \
+                --data "{\"clearCache\": $clear, \"ownerId\": \"$RENDER_OWNER_ID\"}" | tee deploy.json
+              ;;
+            logs)
+              echo "Fetching recent logs for $SERVICE_ID"
+              curl -fsSL "$API/services/$SERVICE_ID/logs?tail=false&limit=1000" "${hdr[@]}" | tee logs.json
+              ;;
+            set-env)
+              echo "Updating environment variables for $SERVICE_ID"
+              tmp=$(mktemp)
+              printf '{"env":[' > "$tmp"
+              first=1
+              while IFS= read -r line; do
+                [ -z "$line" ] && continue
+                key="${line%%=*}"
+                val="${line#*=}"
+                [ $first -eq 0 ] && printf ',' >> "$tmp" || first=0
+                printf '{"key":"%s","value":"%s"}' "$key" "$val" >> "$tmp"
+              done <<< "$ENVP"
+              printf ']}' >> "$tmp"
+              cat "$tmp"
+              curl -fsSL -X PATCH "$API/services/$SERVICE_ID/env-vars" "${hdr[@]}" --data @"$tmp" | tee env.json
+              ;;
+            *)
+              echo "Unknown action: $ACTION" >&2; exit 1 ;;
+          esac
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-api-output
+          path: |
+            deploy.json
+            logs.json
+            env.json
+
+      - name: Report URLs
+        if: ${{ secrets.RENDER_API_KEY }}
+        shell: bash
+        env:
+          API: ${{ env.RENDER_API_BASE }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ steps.ids.outputs.service_id }}
+        run: |
+          set -euo pipefail
+          hdr=( -H "Authorization: Bearer $RENDER_API_KEY" )
+          url=$(curl -fsSL "$API/services/$SERVICE_ID" "${hdr[@]}" | jq -r '.service.details.url // .service.dashboardUrl // empty')
+          echo "Service URL: ${url:-unknown}" | tee -a $GITHUB_STEP_SUMMARY
+
+
