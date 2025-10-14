@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import enhanced security middleware
-const {
+import {
   generalLimiter,
   authLimiter,
   apiLimiter,
@@ -1303,7 +1303,7 @@ const startServer = async() => {
       }
     }
 
-    // Start server
+    // Start server with production optimizations
     const server = app.listen(env.PORT, env.HOST, () => {
       logger.info('🚀 CryptoPulse Backend started', {
         port: env.PORT,
@@ -1316,21 +1316,47 @@ const startServer = async() => {
       logger.info('🔒 Security features enabled');
       logger.info(`📈 Health check available at http://${env.HOST}:${env.PORT}/health`);
 
-      // Initialize WebSocket server
-      const _wsServer = createWebSocketServer(server, {
-        maxConnections: 1000,
-        messageRateLimit: 100,
-        heartbeatInterval: 30000
-      });
-      logger.info('🔌 WebSocket server initialized on /ws');
+      // Initialize WebSocket server (disabled in production for resource optimization)
+      if (env.NODE_ENV !== 'production') {
+        const _wsServer = createWebSocketServer(server, {
+          maxConnections: 100,
+          messageRateLimit: 50,
+          heartbeatInterval: 60000
+        });
+        logger.info('🔌 WebSocket server initialized on /ws');
+      }
 
-      // Initialize trading bot
-      const tradingBot = new TradingBot();
-      tradingBot.start().then(() => {
-        logger.info('🤖 Trading bot started successfully');
-      }).catch(error => {
-        logger.error('❌ Failed to start trading bot:', error);
-      });
+      // Initialize trading bot (disabled in production for resource optimization)
+      if (env.NODE_ENV !== 'production') {
+        const tradingBot = new TradingBot();
+        tradingBot.start().then(() => {
+          logger.info('🤖 Trading bot started successfully');
+        }).catch(error => {
+          logger.error('❌ Failed to start trading bot:', error);
+        });
+      } else {
+        logger.info('🚀 Production mode: Trading bot and WebSocket server disabled for resource optimization');
+      }
+
+      // Production optimizations
+      if (env.NODE_ENV === 'production') {
+        // Reduce memory usage by disabling unnecessary features
+        server.maxConnections = 100; // Limit concurrent connections
+        server.keepAliveTimeout = 30000; // 30 seconds
+        server.headersTimeout = 35000; // 35 seconds
+        
+        // Log memory usage periodically
+        setInterval(() => {
+          const memUsage = process.memoryUsage();
+          const memUsageMB = {
+            rss: Math.round(memUsage.rss / 1024 / 1024),
+            heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+            heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+            external: Math.round(memUsage.external / 1024 / 1024)
+          };
+          logger.info('Memory usage:', memUsageMB);
+        }, 60000); // Every minute
+      }
     });
 
     // Handle server errors
