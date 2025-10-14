@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logInfo('Attempting user login', 'Auth');
 
       // Use REST API for authentication
-      const response = await fetch(`${config.api.baseUrl}/api/v1/auth/login`, {
+      const response = await fetch(`${config.api.baseUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -135,7 +135,7 @@ try {
       ),
       timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
       retryAttempts: parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS || '3'),
-      version: import.meta.env.VITE_API_VERSION || 'v1',
+      version: import.meta.env.VITE_API_VERSION || '',
     },
     app: {
       name: import.meta.env.VITE_APP_NAME || 'CryptoPulse',
