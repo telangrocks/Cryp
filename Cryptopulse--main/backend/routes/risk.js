@@ -5,10 +5,10 @@
  * for the backend, complementing the risk management system.
  */
 
-const express = require('express');
-const { riskManager } = require('../lib/riskManager');
-const { authenticateToken, requireRole } = require('../lib/auth');
-const { logger } = require('../lib/logging');
+import express from 'express';
+import { riskManager } from '../lib/riskManager.js';
+import { authenticateToken, requireRole } from '../lib/auth.js';
+import { logger } from '../lib/logging.js';
 // Note: rateLimitByUser might not exist, using a simple rate limiter instead
 
 const router = express.Router();

@@ -5,12 +5,12 @@
  * for strategy testing and simulation.
  */
 
-const express = require('express');
-const { backtestingEngine } = require('../lib/backtestingEngine');
-const { authenticateToken, requireRole } = require('../lib/auth');
-const { logger } = require('../lib/logging');
+import express from 'express';
+import { backtestingEngine } from '../lib/backtestingEngine.js';
+import { authenticateToken, requireRole } from '../lib/auth.js';
+import { logger } from '../lib/logging.js';
 // Note: rateLimitByUser might not exist, using a simple rate limiter instead
-const backtestingConfig = require('../config/backtesting.config');
+import backtestingConfig from '../config/backtesting.config.js';
 
 const router = express.Router();
 
