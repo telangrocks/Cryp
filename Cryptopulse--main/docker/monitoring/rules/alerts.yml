@@ -1,0 +1,250 @@
+# =============================================================================
+# CryptoPulse Prometheus Alerting Rules - 100% Production Ready
+# =============================================================================
+# World-Class Production Alerting Rules
+
+groups:
+  # =========================================================================
+  # System Health Alerts
+  # =========================================================================
+  - name: system_health
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Disk space is low"
+          description: "Disk space is below 10% on {{ $labels.instance }} mount {{ $labels.mountpoint }}"
+
+  # =========================================================================
+  # Application Health Alerts
+  # =========================================================================
+  - name: application_health
+    rules:
+      - alert: BackendDown
+        expr: up{job="cryptopulse-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: FrontendDown
+        expr: up{job="cryptopulse-frontend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: "Frontend service is down"
+          description: "Frontend service {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: CloudServiceDown
+        expr: up{job="cryptopulse-cloud"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: cloud
+        annotations:
+          summary: "Cloud service is down"
+          description: "Cloud service {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: NginxDown
+        expr: up{job="cryptopulse-nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nginx
+        annotations:
+          summary: "Nginx load balancer is down"
+          description: "Nginx load balancer {{ $labels.instance }} has been down for more than 1 minute"
+
+  # =========================================================================
+  # Database Health Alerts
+  # =========================================================================
+  - name: database_health
+    rules:
+      - alert: PostgreSQLDown
+        expr: up{job="cryptopulse-postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: RedisDown
+        expr: up{job="cryptopulse-redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache {{ $labels.instance }} has been down for more than 1 minute"
+
+      - alert: MongoDBDown
+        expr: up{job="cryptopulse-mongodb"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: mongodb
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB {{ $labels.instance }} has been down for more than 1 minute"
+
+  # =========================================================================
+  # Performance Alerts
+  # =========================================================================
+  - name: performance_alerts
+    rules:
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 1 second for more than 5 minutes"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for more than 5 minutes"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total[5m]) < 10
+        for: 10m
+        labels:
+          severity: info
+          service: backend
+        annotations:
+          summary: "Low throughput detected"
+          description: "Request rate is below 10 requests per second for more than 10 minutes"
+
+  # =========================================================================
+  # Container Health Alerts
+  # =========================================================================
+  - name: container_health
+    rules:
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: container
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for more than 5 minutes"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: container
+        annotations:
+          summary: "Container high memory usage"
+          description: "Container {{ $labels.name }} memory usage is above 85% for more than 5 minutes"
+
+      - alert: ContainerRestarting
+        expr: rate(container_start_time_seconds[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: container
+        annotations:
+          summary: "Container is restarting frequently"
+          description: "Container {{ $labels.name }} has restarted in the last 10 minutes"
+
+  # =========================================================================
+  # Security Alerts
+  # =========================================================================
+  - name: security_alerts
+    rules:
+      - alert: HighFailedLogins
+        expr: rate(auth_failed_attempts_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High number of failed login attempts"
+          description: "More than 10 failed login attempts per minute detected"
+
+      - alert: SuspiciousActivity
+        expr: rate(http_requests_total{status="403"}[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "High number of 403 responses (more than 50 per minute) detected"
+
+  # =========================================================================
+  # Business Logic Alerts
+  # =========================================================================
+  - name: business_logic_alerts
+    rules:
+      - alert: TradingBotOffline
+        expr: up{job="cryptopulse-backend"} == 0 or rate(trading_operations_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          service: trading
+        annotations:
+          summary: "Trading bot is offline"
+          description: "Trading bot has been offline for more than 10 minutes"
+
+      - alert: LowTradingVolume
+        expr: rate(trading_volume_total[1h]) < 1000
+        for: 30m
+        labels:
+          severity: info
+          service: trading
+        annotations:
+          summary: "Low trading volume"
+          description: "Trading volume is below 1000 units per hour for more than 30 minutes"
+
+      - alert: HighTradingErrors
+        expr: rate(trading_errors_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: trading
+        annotations:
+          summary: "High trading error rate"
+          description: "More than 5 trading errors per minute detected"

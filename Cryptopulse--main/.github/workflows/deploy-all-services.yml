@@ -60,7 +60,110 @@ jobs:
           
           case "$ACTION" in
             deploy-all)
-              echo "🚀 Deploying all Cryptopulse services..."
+              echo "🚀 Deploying all Cryptopulse services with production environment variables..."
+              
+              # Update Frontend environment variables
+              echo "Updating Frontend environment variables..."
+              frontend_env='[
+                {"key":"NODE_ENV","value":"production"},
+                {"key":"VITE_APP_NAME","value":"CryptoPulse"},
+                {"key":"VITE_APP_VERSION","value":"2.0.0"},
+                {"key":"VITE_BUILD_TARGET","value":"production"},
+                {"key":"VITE_ENABLE_SOURCEMAPS","value":"false"},
+                {"key":"VITE_API_BASE_URL","value":"https://cryptopulse-backend.onrender.com"},
+                {"key":"VITE_ENCRYPTION_KEY","value":"351d82b45bcc2d9fc19fd9c46eea8006239c9ff578e7306abb6c970fd35ae919"},
+                {"key":"VITE_ENABLE_ANALYTICS","value":"true"},
+                {"key":"VITE_ENABLE_DEBUG","value":"false"},
+                {"key":"VITE_ENABLE_MOCK_DATA","value":"false"},
+                {"key":"VITE_ENABLE_COMPRESSION","value":"true"},
+                {"key":"VITE_ENABLE_CACHING","value":"true"},
+                {"key":"VITE_ENABLE_MONITORING","value":"true"},
+                {"key":"VITE_ENABLE_TRACING","value":"true"}
+              ]'
+              curl -fsSL -X PATCH "$API/services/$FRONTEND_SERVICE_ID/env-vars" "${hdr[@]}" \
+                --data "{\"env\": $frontend_env}" | tee frontend-env.json
+              
+              # Update Backend environment variables
+              echo "Updating Backend environment variables..."
+              backend_env='[
+                {"key":"NODE_ENV","value":"production"},
+                {"key":"PORT","value":"10000"},
+                {"key":"HOST","value":"0.0.0.0"},
+                {"key":"JWT_SECRET","value":"28f1020b4c2feb5200e5a8e62b4348203d7806a49f399728ba58adc12f2e188c"},
+                {"key":"JWT_EXPIRES_IN","value":"24h"},
+                {"key":"JWT_REFRESH_EXPIRES_IN","value":"7d"},
+                {"key":"ENCRYPTION_KEY","value":"351d82b45bcc2d9fc19fd9c46eea8006239c9ff578e7306abb6c970fd35ae919"},
+                {"key":"CSRF_SECRET","value":"c0298a34a1cafe812fe04b7a56669016faf697cfce454a7af7a6c37388aea28a"},
+                {"key":"SESSION_SECRET","value":"a140f6b13edc1a055069ffde09e96e23d60fe826d53e8b4cf600e8580df91059"},
+                {"key":"BINANCE_TESTNET","value":"false"},
+                {"key":"CASHFREE_ENV","value":"production"},
+                {"key":"CASHFREE_BASE_URL","value":"https://api.cashfree.com"},
+                {"key":"FRONTEND_URL","value":"https://cryptopulse-frontend.onrender.com"},
+                {"key":"BACKEND_URL","value":"https://cryptopulse-backend.onrender.com"},
+                {"key":"CLOUD_URL","value":"https://cryptopulse-cloud.onrender.com"},
+                {"key":"ALLOWED_ORIGINS","value":"https://cryptopulse-frontend.onrender.com,https://cryptopulse-backend.onrender.com,https://cryptopulse-cloud.onrender.com"},
+                {"key":"CORS_ORIGIN","value":"https://cryptopulse-frontend.onrender.com"},
+                {"key":"LOG_LEVEL","value":"info"},
+                {"key":"ENABLE_MONITORING","value":"true"},
+                {"key":"ENABLE_TRACING","value":"true"},
+                {"key":"ENABLE_ANALYTICS","value":"true"},
+                {"key":"RATE_LIMIT_WINDOW_MS","value":"900000"},
+                {"key":"RATE_LIMIT_MAX_REQUESTS","value":"100"},
+                {"key":"ENABLE_CSRF_PROTECTION","value":"true"},
+                {"key":"ENABLE_RATE_LIMITING","value":"true"},
+                {"key":"ENABLE_CORS","value":"true"},
+                {"key":"WEBSOCKET_ENABLED","value":"true"},
+                {"key":"WEBSOCKET_PORT","value":"8080"},
+                {"key":"WEBSOCKET_MAX_CONNECTIONS","value":"1000"},
+                {"key":"WEBSOCKET_MESSAGE_RATE_LIMIT","value":"100"},
+                {"key":"WEBSOCKET_HEARTBEAT_INTERVAL","value":"30000"},
+                {"key":"WEBSOCKET_MAX_MESSAGE_SIZE","value":"1048576"},
+                {"key":"ENABLE_DEBUG","value":"false"},
+                {"key":"ENABLE_MOCK_DATA","value":"false"},
+                {"key":"CLUSTER_MODE","value":"true"},
+                {"key":"MAX_MEMORY_USAGE","value":"80"},
+                {"key":"MAX_CPU_USAGE","value":"80"},
+                {"key":"ENABLE_COMPRESSION","value":"true"},
+                {"key":"ENABLE_CACHING","value":"true"}
+              ]'
+              curl -fsSL -X PATCH "$API/services/$BACKEND_SERVICE_ID/env-vars" "${hdr[@]}" \
+                --data "{\"env\": $backend_env}" | tee backend-env.json
+              
+              # Update Cloud Functions environment variables
+              echo "Updating Cloud Functions environment variables..."
+              cloud_env='[
+                {"key":"NODE_ENV","value":"production"},
+                {"key":"PORT","value":"10000"},
+                {"key":"HOST","value":"0.0.0.0"},
+                {"key":"JWT_SECRET","value":"28f1020b4c2feb5200e5a8e62b4348203d7806a49f399728ba58adc12f2e188c"},
+                {"key":"ENCRYPTION_KEY","value":"351d82b45bcc2d9fc19fd9c46eea8006239c9ff578e7306abb6c970fd35ae919"},
+                {"key":"BINANCE_TESTNET","value":"false"},
+                {"key":"CASHFREE_ENV","value":"production"},
+                {"key":"CASHFREE_BASE_URL","value":"https://api.cashfree.com"},
+                {"key":"FRONTEND_URL","value":"https://cryptopulse-frontend.onrender.com"},
+                {"key":"BACKEND_URL","value":"https://cryptopulse-backend.onrender.com"},
+                {"key":"CLOUD_URL","value":"https://cryptopulse-cloud.onrender.com"},
+                {"key":"ALLOWED_ORIGINS","value":"https://cryptopulse-frontend.onrender.com,https://cryptopulse-backend.onrender.com,https://cryptopulse-cloud.onrender.com"},
+                {"key":"CORS_ORIGIN","value":"https://cryptopulse-frontend.onrender.com"},
+                {"key":"LOG_LEVEL","value":"info"},
+                {"key":"ENABLE_MONITORING","value":"true"},
+                {"key":"ENABLE_TRACING","value":"true"},
+                {"key":"ENABLE_ANALYTICS","value":"true"},
+                {"key":"RATE_LIMIT_WINDOW_MS","value":"900000"},
+                {"key":"RATE_LIMIT_MAX_REQUESTS","value":"100"},
+                {"key":"ENABLE_CSRF_PROTECTION","value":"true"},
+                {"key":"ENABLE_RATE_LIMITING","value":"true"},
+                {"key":"ENABLE_CORS","value":"true"},
+                {"key":"ENABLE_DEBUG","value":"false"},
+                {"key":"ENABLE_MOCK_DATA","value":"false"},
+                {"key":"CLUSTER_MODE","value":"true"},
+                {"key":"MAX_MEMORY_USAGE","value":"80"},
+                {"key":"MAX_CPU_USAGE","value":"80"},
+                {"key":"ENABLE_COMPRESSION","value":"true"},
+                {"key":"ENABLE_CACHING","value":"true"}
+              ]'
+              curl -fsSL -X PATCH "$API/services/$CLOUD_FUNCTIONS_ID/env-vars" "${hdr[@]}" \
+                --data "{\"env\": $cloud_env}" | tee cloud-env.json
               
               # Deploy Frontend
               echo "Deploying Frontend..."
@@ -77,7 +180,7 @@ jobs:
               curl -fsSL -X POST "$API/services/$CLOUD_FUNCTIONS_ID/deploys" "${hdr[@]}" \
                 --data "{\"clearCache\": true, \"ownerId\": \"$OWNER_ID\"}" | tee cloud-deploy.json
               
-              echo "✅ All services deployment initiated!"
+              echo "✅ All services deployment initiated with production environment variables!"
               ;;
             
             health-check)

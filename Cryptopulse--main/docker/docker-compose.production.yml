@@ -2,8 +2,16 @@
 # CryptoPulse Production Docker Compose Configuration - 100% Production Ready
 # =============================================================================
 # Comprehensive multi-container setup with advanced production features
+# World-Class Production Deployment with Docker
 
 version: '3.8'
+
+# =========================================================================
+# Environment Configuration
+# =========================================================================
+# Load environment variables from .env file
+env_file:
+  - env.production
 
 services:
   # =========================================================================
