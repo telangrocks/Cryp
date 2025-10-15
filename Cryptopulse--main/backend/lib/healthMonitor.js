@@ -4,9 +4,10 @@
 // Real-time monitoring of all internal services and dependencies
 
 import axios from 'axios';
-import { Pool } from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 import { MongoClient } from 'mongodb';
-import Redis from 'redis';
+import { createClient } from 'redis';
 import { logger } from './logging.js';
 
 class HealthMonitor {
@@ -151,7 +152,7 @@ class HealthMonitor {
 
       // Initialize Redis connection for health checks
       if (process.env.REDIS_URL) {
-        this.redisClient = Redis.createClient({
+        this.redisClient = createClient({
           url: process.env.REDIS_URL,
           socket: {
             connectTimeout: 5000,
