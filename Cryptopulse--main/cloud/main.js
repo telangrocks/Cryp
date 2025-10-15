@@ -174,6 +174,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// CRITICAL: Root endpoint - MUST be ABSOLUTELY FIRST, before ANY middleware
+app.get('/', (req, res) => {
+  console.log('🔥🔥🔥 CLOUD ROOT ENDPOINT HIT - REDIRECTING TO /health:', req.method, req.path);
+  res.redirect('/health');
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   const healthData = {
