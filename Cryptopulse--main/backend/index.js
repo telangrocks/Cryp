@@ -831,10 +831,12 @@ app.get('/api/v1/exchanges/configured', authenticateToken, async(req, res) => {
 // Import API routes
 import riskRoutes from './routes/risk.js';
 import backtestingRoutes from './routes/backtesting.js';
+import paymentsRoutes from './routes/payments.js';
 
 // Mount API routes
 app.use('/api/risk', riskRoutes);
 app.use('/api/backtesting', backtestingRoutes);
+app.use('/api/v1/payments', paymentsRoutes);
 
 // Root endpoint - API welcome message
 app.get('/', (req, res) => {

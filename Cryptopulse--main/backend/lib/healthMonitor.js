@@ -73,7 +73,7 @@ class HealthMonitor {
       },
       cashfree: {
         name: 'Cashfree Payment API',
-        required: false,
+        required: true,
         status: 'unknown',
         latency: null,
         error: null,

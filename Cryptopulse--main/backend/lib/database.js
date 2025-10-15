@@ -678,6 +678,49 @@ const TradingStrategy = {
   }
 };
 
+// Subscriptions model and helpers
+const Subscription = {
+  async upsertActive({ userId, planId, amount, currency = 'INR', paymentId, orderId, autoRenew = false, durationDays = 30 }) {
+    const startDate = new Date();
+    const endDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+    const queryText = `
+      INSERT INTO subscriptions (user_id, plan_id, status, start_date, end_date, auto_renew, payment_method, payment_id, order_id, amount, currency, created_at, updated_at)
+      VALUES ($1, $2, 'ACTIVE', $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ON CONFLICT (user_id)
+      DO UPDATE SET plan_id = EXCLUDED.plan_id, status = 'ACTIVE', start_date = EXCLUDED.start_date, end_date = EXCLUDED.end_date, auto_renew = EXCLUDED.auto_renew, payment_method = EXCLUDED.payment_method, payment_id = EXCLUDED.payment_id, order_id = EXCLUDED.order_id, amount = EXCLUDED.amount, currency = EXCLUDED.currency, updated_at = NOW()
+      RETURNING *
+    `;
+    const values = [userId, planId, startDate, endDate, autoRenew, 'cashfree', paymentId, orderId, amount, currency];
+    const result = await query(queryText, values);
+    return result.rows[0];
+  },
+
+  async cancel({ userId }) {
+    const result = await query(`
+      UPDATE subscriptions
+      SET status = 'CANCELLED', updated_at = NOW()
+      WHERE user_id = $1
+      RETURNING *
+    `, [userId]);
+    return result.rows[0] || null;
+  },
+
+  async expire({ userId }) {
+    const result = await query(`
+      UPDATE subscriptions
+      SET status = 'EXPIRED', updated_at = NOW()
+      WHERE user_id = $1
+      RETURNING *
+    `, [userId]);
+    return result.rows[0] || null;
+  },
+
+  async getByUserId(userId) {
+    const result = await query('SELECT * FROM subscriptions WHERE user_id = $1', [userId]);
+    return result.rows[0] || null;
+  }
+};
+
 // Cache helpers
 const Cache = {
   async get(key) {
@@ -898,6 +941,7 @@ const closeConnections = async() => {
 export {
   initDatabases,
   query,
+  // Subscriptions helpers will be appended below
   getMongoDB,
   getMongoDBSafe,
   getRedis,
@@ -906,6 +950,7 @@ export {
   Trade,
   ExchangeConfig,
   TradingStrategy,
+  Subscription,
   Cache,
   healthCheck,
   reconnectOnFailure,

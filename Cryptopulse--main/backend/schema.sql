@@ -163,6 +163,31 @@ CREATE INDEX IF NOT EXISTS idx_api_usage_logs_status_code ON api_usage_logs(stat
 CREATE INDEX IF NOT EXISTS idx_api_usage_logs_created_at ON api_usage_logs(created_at);
 
 -- =============================================================================
+-- SUBSCRIPTIONS TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_id VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'EXPIRED', 'CANCELLED', 'PENDING')),
+    start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    end_date TIMESTAMP,
+    auto_renew BOOLEAN DEFAULT false,
+    payment_method VARCHAR(50),
+    payment_id VARCHAR(100),
+    order_id VARCHAR(100),
+    amount DECIMAL(12, 2),
+    currency VARCHAR(10) DEFAULT 'INR',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
+);
+
+-- Indexes for subscriptions
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+-- =============================================================================
 -- SYSTEM SETTINGS TABLE
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS system_settings (
