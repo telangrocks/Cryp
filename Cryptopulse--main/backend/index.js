@@ -5,6 +5,7 @@
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import winston from 'winston';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -838,6 +839,7 @@ app.get('/', (req, res) => {
     message: 'CryptoPulse Backend API',
     version: '2.0.0',
     status: 'operational',
+    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       health: '/health',
       detailedHealth: '/health/detailed',
@@ -846,6 +848,11 @@ app.get('/', (req, res) => {
     documentation: 'https://api.thecryptopulse.com/docs',
     timestamp: new Date().toISOString()
   });
+});
+
+// Favicon endpoint to prevent 404s
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).send(); // No content for favicon
 });
 
 // =============================================================================

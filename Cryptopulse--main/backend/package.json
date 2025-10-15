@@ -8,7 +8,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "build": "echo 'Backend build completed'",
-    "start:production": "cross-env NODE_ENV=production node index.js",
+    "start:production": "cross-env NODE_ENV=production node index.production.js",
     "build:production": "cross-env NODE_ENV=production node verify-production.js",
     "setup:env": "node setup-env.js",
     "setup:dev": "node setup-env.js development",

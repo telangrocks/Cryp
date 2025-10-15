@@ -21,6 +21,28 @@ const PORT = process.env.PORT || 10000;
 const HOST = process.env.HOST || '0.0.0.0';
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
+// CRITICAL: Root endpoint - MUST be ABSOLUTELY FIRST, before ANY middleware
+app.get('/', (req, res) => {
+  console.log('🔥🔥🔥 ROOT ENDPOINT HIT - REDIRECTING TO /health:', req.method, req.path);
+  res.redirect('/health');
+});
+
+// Handle HEAD requests to root path
+app.head('/', (req, res) => {
+  console.log('🔥🔥🔥 ROOT HEAD ENDPOINT HIT - REDIRECTING TO /health:', req.method, req.path);
+  res.redirect('/health');
+});
+
+// Favicon endpoint - also early to avoid middleware interference
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).send(); // No content for favicon
+});
+
+// Test endpoint to verify deployment
+app.get('/test', (req, res) => {
+  res.json({ message: 'Deployment test successful', timestamp: new Date().toISOString() });
+});
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -58,6 +80,7 @@ app.get('/health', (req, res) => {
     version: '2.0.0'
   });
 });
+
 
 // API status endpoint
 app.get('/api/status', (req, res) => {
@@ -127,11 +150,25 @@ app.use((error, req, res, next) => {
 
 // Start server
 const server = app.listen(PORT, HOST, () => {
-  console.log(`🚀 CryptoPulse Backend started`);
+  console.log(`🚀 CryptoPulse Backend started from index.production.js`);
   console.log(`📡 Server running on ${HOST}:${PORT}`);
   console.log(`📊 Environment: ${NODE_ENV}`);
   console.log(`🔒 Security features enabled`);
   console.log(`📈 Health check: http://${HOST}:${PORT}/health`);
+  console.log(`🔧 Port configuration: process.env.PORT=${process.env.PORT || 'not set'}, using PORT=${PORT}`);
+  console.log(`✅ ROOT ROUTE SHOULD REDIRECT TO /health`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+    console.error(`🔧 Please check if another process is using port ${PORT}`);
+    process.exit(1);
+  } else {
+    console.error('❌ Server error:', error);
+    process.exit(1);
+  }
 });
 
 // Production optimizations
