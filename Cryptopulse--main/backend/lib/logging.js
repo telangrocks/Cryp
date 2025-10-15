@@ -682,7 +682,7 @@ const healthLogger = {
 };
 
 // Export logging utilities
-module.exports = {
+export {
   logger,
   requestLogger,
   errorLogger,

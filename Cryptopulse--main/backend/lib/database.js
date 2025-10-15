@@ -894,7 +894,7 @@ const closeConnections = async() => {
 };
 
 // Export database utilities
-module.exports = {
+export {
   initDatabases,
   query,
   getMongoDB,
