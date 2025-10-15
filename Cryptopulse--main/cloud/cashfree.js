@@ -2,9 +2,9 @@
 // CryptoPulse Cashfree Payment Service - Cloud Function
 // =============================================================================
 // Handles payment processing and subscription management
-const express = require('express');
-const axios = require('axios');
-const crypto = require('crypto');
+import express from 'express';
+import axios from 'axios';
+import crypto from 'crypto';
 const router = express.Router();
 // Cashfree configuration
 const CASHFREE_CONFIG = {
@@ -318,4 +318,4 @@ async function handlePaymentFailed(data) {
 async function handlePaymentDropped(data) {
   // Handle dropped payment
 }
-module.exports = router;
+export default router;

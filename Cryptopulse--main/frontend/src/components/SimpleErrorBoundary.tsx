@@ -58,3 +58,4 @@ export class SimpleErrorBoundary extends React.Component<Props, State> {
     return this.props.children;
   }
 }
+

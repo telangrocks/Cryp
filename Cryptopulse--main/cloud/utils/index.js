@@ -3,9 +3,9 @@
 // =============================================================================
 // Common utility functions for cloud functions with Express router
 
-const express = require('express');
-const crypto = require('crypto');
-const { format, addDays, addHours, isBefore, differenceInMilliseconds } = require('date-fns');
+import express from 'express';
+import crypto from 'crypto';
+import { format, addDays, addHours, isBefore, differenceInMilliseconds } from 'date-fns';
 
 const router = express.Router();
 
@@ -426,10 +426,10 @@ router.post('/trading/calculate', (req, res) => {
 });
 
 // Export router as the main export
-module.exports = router;
+export default router;
 
 // Also export utilities for direct access if needed
-module.exports.utils = {
+export const utils = {
   validation: validationUtils,
   encryption: encryptionUtils,
   date: dateUtils,

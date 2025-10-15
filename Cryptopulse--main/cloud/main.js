@@ -19,7 +19,7 @@ import cashfreeService from './cashfree.js';
 import monitoringService from './monitoring.js';
 
 // Import utils with error handling
-import utils from './utils.js';
+import utilsRouter, { utils } from './utils/index.js';
 
 const app = express();
 
@@ -265,7 +265,7 @@ app.use('/api', apiLimiter);
 app.use('/exchange', exchangeService);
 app.use('/payment', cashfreeService);
 app.use('/monitoring', monitoringService);
-app.use('/utils', utils);
+app.use('/utils', utilsRouter);
 
 // API documentation endpoint
 app.get('/api/docs', (req, res) => {
@@ -417,10 +417,10 @@ process.on('uncaughtException', (error) => {
 });
 
 // Export for Northflank
-module.exports = app;
+export default app;
 
 // If running directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const PORT = process.env.PORT || 3001;
   const HOST = process.env.HOST || '0.0.0.0';
   

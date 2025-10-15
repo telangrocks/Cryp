@@ -41,3 +41,4 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Start the application
 initializeApp();
+
