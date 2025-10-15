@@ -63,6 +63,9 @@ import TradingBot from './lib/tradingBot.js';
 // Import WebSocket server
 import { createWebSocketServer } from './lib/websocketServer.js';
 
+// Import comprehensive health monitor
+import healthMonitor from './lib/healthMonitor.js';
+
 // Load environment variables with fallback strategy
 import dotenv from 'dotenv';
 
@@ -154,55 +157,36 @@ app.use(validateInput);
 // HEALTH CHECK ENDPOINTS
 // =============================================================================
 
-// Basic health check
+// Comprehensive health check endpoint
 app.get('/health', async(req, res) => {
   try {
-    // Check database connectivity (handle if not initialized)
-    let dbStatus = 'Not Configured';
-    try {
-      if (typeof query === 'function') {
-        await query('SELECT 1');
-        dbStatus = 'Connected';
+    const healthStatus = await healthMonitor.performHealthCheck();
+    
+    // Determine HTTP status based on overall health
+    const httpStatus = healthStatus.overall.status === 'healthy' ? 200 : 503;
+    
+    res.status(httpStatus).json({
+      status: healthStatus.overall.status,
+      timestamp: healthStatus.timestamp,
+      environment: healthStatus.environment,
+      service: 'cryptopulse-backend',
+      version: healthStatus.version,
+      uptime: healthStatus.overall.uptime,
+      checkDuration: `${healthStatus.overall.checkDuration}ms`,
+      summary: {
+        totalServices: healthStatus.overall.totalServices,
+        healthyServices: healthStatus.overall.healthyServices,
+        requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+        totalRequiredServices: healthStatus.overall.totalRequiredServices
+      },
+      services: healthStatus.services,
+      endpoints: {
+        health: '/health',
+        healthQuick: '/health/quick',
+        healthDetailed: '/health/detailed',
+        api: '/api/v1/*'
       }
-    } catch (error) {
-      dbStatus = 'Disconnected';
-      logger.warn('Database health check failed:', error.message);
-    }
-
-    // Check Redis connectivity (handle if not initialized)
-    let redisStatus = 'Not Configured';
-    try {
-      if (typeof getRedisSafe === 'function') {
-        const redis = getRedisSafe();
-        if (redis) {
-          await redis.ping();
-          redisStatus = 'Connected';
-        } else {
-          redisStatus = 'Not Available';
-        }
-      }
-    } catch (error) {
-      redisStatus = 'Disconnected';
-      logger.warn('Redis health check failed:', error.message);
-    }
-
-    const healthData = {
-      status: dbStatus === 'Connected' && redisStatus === 'Connected' ? 'healthy' : 'degraded',
-      timestamp: new Date().toISOString(),
-      version: '2.0.0',
-      port: env.PORT,
-      environment: env.NODE_ENV,
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      services: {
-        database: dbStatus,
-        redis: redisStatus,
-        api: 'Operational'
-      }
-    };
-
-    // Always return 200 - service is running even if some dependencies are down
-    res.status(200).json(healthData);
+    });
   } catch (error) {
     logger.error('Health check error:', error);
     // Even on error, return 200 so the service appears alive
@@ -216,74 +200,85 @@ app.get('/health', async(req, res) => {
   }
 });
 
-// Detailed health check
+// Quick health check endpoint (cached status)
+app.get('/health/quick', (req, res) => {
+  const healthStatus = healthMonitor.getHealthStatus();
+  
+  res.status(200).json({
+    status: healthStatus.overall.status,
+    timestamp: healthStatus.timestamp,
+    environment: healthStatus.environment,
+    service: 'cryptopulse-backend',
+    version: healthStatus.version,
+    uptime: healthStatus.overall.uptime,
+    summary: {
+      totalServices: healthStatus.overall.totalServices,
+      healthyServices: healthStatus.overall.healthyServices,
+      requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+      totalRequiredServices: healthStatus.overall.totalRequiredServices
+    }
+  });
+});
+
+// Detailed health check endpoint with system metrics
 app.get('/health/detailed', async(req, res) => {
   try {
-  // Check database connectivity
-    let dbStatus = 'Connected';
-    let dbResponseTime = 0;
-    try {
-      const start = Date.now();
-      await query('SELECT 1');
-      dbResponseTime = Date.now() - start;
-    } catch (error) {
-      dbStatus = 'Disconnected';
-      logger.error('Database detailed health check failed:', error.message);
-    }
-
-    // Check Redis connectivity
-    let redisStatus = 'Connected';
-    let redisResponseTime = 0;
-    try {
-      const redis = getRedisSafe();
-      if (redis) {
-        const start = Date.now();
-        await redis.ping();
-        redisResponseTime = Date.now() - start;
-      } else {
-        redisStatus = 'Not Available';
-      }
-    } catch (error) {
-      redisStatus = 'Disconnected';
-      logger.error('Redis detailed health check failed:', error.message);
-    }
-
-    const healthData = {
-      status: dbStatus === 'Connected' && redisStatus === 'Connected' ? 'healthy' : 'degraded',
-      timestamp: new Date().toISOString(),
-      version: '2.0.0',
-      port: env.PORT,
-      host: env.HOST,
-      environment: env.NODE_ENV,
-      uptime: process.uptime(),
+    const healthStatus = await healthMonitor.performHealthCheck();
+    
+    // Add system metrics
+    const systemMetrics = {
       memory: process.memoryUsage(),
-      services: {
-        database: {
-          status: dbStatus,
-          responseTime: `${dbResponseTime}ms`
-        },
-        redis: {
-          status: redisStatus,
-          responseTime: `${redisResponseTime}ms`
-        },
-        api: 'Operational'
+      cpu: process.cpuUsage(),
+      uptime: process.uptime(),
+      platform: process.platform,
+      nodeVersion: process.version,
+      pid: process.pid
+    };
+    
+    const httpStatus = healthStatus.overall.status === 'healthy' ? 200 : 503;
+    
+    res.status(httpStatus).json({
+      status: healthStatus.overall.status,
+      timestamp: healthStatus.timestamp,
+      environment: healthStatus.environment,
+      service: 'cryptopulse-backend',
+      version: healthStatus.version,
+      uptime: healthStatus.overall.uptime,
+      checkDuration: `${healthStatus.overall.checkDuration}ms`,
+      system: systemMetrics,
+      summary: {
+        totalServices: healthStatus.overall.totalServices,
+        healthyServices: healthStatus.overall.healthyServices,
+        requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+        totalRequiredServices: healthStatus.overall.totalRequiredServices
       },
+      services: healthStatus.services,
       configuration: {
+        port: env.PORT,
+        host: env.HOST,
         cors: env.ENABLE_CORS,
         rateLimit: env.ENABLE_RATE_LIMITING,
         csrf: env.ENABLE_CSRF_PROTECTION,
-        analytics: env.ENABLE_ANALYTICS
+        analytics: env.ENABLE_ANALYTICS,
+        websocket: env.WEBSOCKET_ENABLED
+      },
+      environmentVariables: {
+        nodeEnv: process.env.NODE_ENV,
+        databaseUrl: process.env.DATABASE_URL ? 'configured' : 'not configured',
+        redisUrl: process.env.REDIS_URL ? 'configured' : 'not configured',
+        mongodbUrl: process.env.MONGODB_URL ? 'configured' : 'not configured'
       }
-    };
-
-    const statusCode = healthData.status === 'healthy' ? 200 : 503;
-    res.status(statusCode).json(healthData);
+    });
   } catch (error) {
-    logger.error('Detailed health check error:', error);
+    logger.error('Detailed health check failed:', error);
     res.status(503).json({
-      status: 'unhealthy',
+      status: 'error',
       timestamp: new Date().toISOString(),
-      error: 'Detailed health check failed'
+      environment: process.env.NODE_ENV || 'development',
+      service: 'cryptopulse-backend',
+      version: '2.0.0',
+      error: 'Detailed health check failed',
+      message: error.message
     });
   }
 });
@@ -295,9 +290,18 @@ app.get('/health/detailed', async(req, res) => {
 // API status endpoint
 app.get('/api/status', (req, res) => {
   res.json({
-    message: 'CryptoPulse API is running',
+    status: 'operational',
+    service: 'cryptopulse-backend',
     version: '2.0.0',
-    timestamp: new Date().toISOString()
+    environment: env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      healthQuick: '/health/quick',
+      healthDetailed: '/health/detailed',
+      status: '/api/status',
+      auth: '/api/v1/auth/*'
+    }
   });
 });
 

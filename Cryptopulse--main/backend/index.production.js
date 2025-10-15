@@ -10,6 +10,9 @@ import compression from 'compression';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
+// Import comprehensive health monitor
+import healthMonitor from './lib/healthMonitor.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -70,17 +73,120 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Comprehensive health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    const healthStatus = await healthMonitor.performHealthCheck();
+    
+    // Determine HTTP status based on overall health
+    const httpStatus = healthStatus.overall.status === 'healthy' ? 200 : 503;
+    
+    res.status(httpStatus).json({
+      status: healthStatus.overall.status,
+      timestamp: healthStatus.timestamp,
+      environment: healthStatus.environment,
+      service: 'cryptopulse-backend',
+      version: healthStatus.version,
+      uptime: healthStatus.overall.uptime,
+      checkDuration: `${healthStatus.overall.checkDuration}ms`,
+      summary: {
+        totalServices: healthStatus.overall.totalServices,
+        healthyServices: healthStatus.overall.healthyServices,
+        requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+        totalRequiredServices: healthStatus.overall.totalRequiredServices
+      },
+      services: healthStatus.services
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      environment: NODE_ENV,
+      service: 'cryptopulse-backend',
+      version: '2.0.0',
+      error: 'Health check failed',
+      message: error.message
+    });
+  }
+});
+
+// Quick health check endpoint (cached status)
+app.get('/health/quick', (req, res) => {
+  const healthStatus = healthMonitor.getHealthStatus();
+  
   res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
+    status: healthStatus.overall.status,
+    timestamp: healthStatus.timestamp,
+    environment: healthStatus.environment,
     service: 'cryptopulse-backend',
-    version: '2.0.0'
+    version: healthStatus.version,
+    uptime: healthStatus.overall.uptime,
+    summary: {
+      totalServices: healthStatus.overall.totalServices,
+      healthyServices: healthStatus.overall.healthyServices,
+      requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+      totalRequiredServices: healthStatus.overall.totalRequiredServices
+    }
   });
 });
 
+
+// Detailed health check endpoint with system metrics
+app.get('/health/detailed', async (req, res) => {
+  try {
+    const healthStatus = await healthMonitor.performHealthCheck();
+    
+    // Add system metrics
+    const systemMetrics = {
+      memory: process.memoryUsage(),
+      cpu: process.cpuUsage(),
+      uptime: process.uptime(),
+      platform: process.platform,
+      nodeVersion: process.version,
+      pid: process.pid
+    };
+    
+    const httpStatus = healthStatus.overall.status === 'healthy' ? 200 : 503;
+    
+    res.status(httpStatus).json({
+      status: healthStatus.overall.status,
+      timestamp: healthStatus.timestamp,
+      environment: healthStatus.environment,
+      service: 'cryptopulse-backend',
+      version: healthStatus.version,
+      uptime: healthStatus.overall.uptime,
+      checkDuration: `${healthStatus.overall.checkDuration}ms`,
+      system: systemMetrics,
+      summary: {
+        totalServices: healthStatus.overall.totalServices,
+        healthyServices: healthStatus.overall.healthyServices,
+        requiredServicesHealthy: healthStatus.overall.requiredServicesHealthy,
+        totalRequiredServices: healthStatus.overall.totalRequiredServices
+      },
+      services: healthStatus.services,
+      environmentVariables: {
+        nodeEnv: process.env.NODE_ENV,
+        port: process.env.PORT,
+        host: process.env.HOST,
+        databaseUrl: process.env.DATABASE_URL ? 'configured' : 'not configured',
+        redisUrl: process.env.REDIS_URL ? 'configured' : 'not configured',
+        mongodbUrl: process.env.MONGODB_URL ? 'configured' : 'not configured'
+      }
+    });
+  } catch (error) {
+    console.error('Detailed health check failed:', error);
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      environment: NODE_ENV,
+      service: 'cryptopulse-backend',
+      version: '2.0.0',
+      error: 'Detailed health check failed',
+      message: error.message
+    });
+  }
+});
 
 // API status endpoint
 app.get('/api/status', (req, res) => {
@@ -92,6 +198,8 @@ app.get('/api/status', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
+      healthQuick: '/health/quick',
+      healthDetailed: '/health/detailed',
       status: '/api/status',
       auth: '/api/auth/*'
     }
@@ -177,20 +285,33 @@ server.keepAliveTimeout = 30000;
 server.headersTimeout = 35000;
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+const gracefulShutdown = async (signal) => {
+  console.log(`${signal} received, shutting down gracefully`);
+  
+  try {
+    // Cleanup health monitor connections
+    await healthMonitor.cleanup();
+    console.log('Health monitor cleaned up');
+    
+    // Close server
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+    
+    // Force exit after 10 seconds
+    setTimeout(() => {
+      console.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+    
+  } catch (error) {
+    console.error('Error during graceful shutdown:', error);
+    process.exit(1);
+  }
+};
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export default app;
