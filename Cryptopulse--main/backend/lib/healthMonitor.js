@@ -126,8 +126,23 @@ class HealthMonitor {
     this.mongoClient = null;
     this.redisClient = null;
 
-    this.initializeConnections();
-    this.startPeriodicChecks();
+    // Don't start automatically - will be started after database initialization
+    this.initialized = false;
+  }
+
+  async start() {
+    if (this.initialized) {
+      return;
+    }
+    
+    try {
+      await this.initializeConnections();
+      this.startPeriodicChecks();
+      this.initialized = true;
+      logger.info('Health monitor started successfully');
+    } catch (error) {
+      logger.error('Failed to start health monitor:', error);
+    }
   }
 
   async initializeConnections() {
@@ -163,6 +178,10 @@ class HealthMonitor {
   async checkPostgreSQL() {
     const startTime = Date.now();
     try {
+      if (!this.initialized) {
+        throw new Error('Health monitor not initialized');
+      }
+      
       // Use the existing database connection from database.js
       const result = await query('SELECT NOW() as current_time, version() as version');
       

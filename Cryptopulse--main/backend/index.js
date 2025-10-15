@@ -1292,7 +1292,7 @@ async function updatePortfolio(userId, tradeData) {
 // Initialize databases and start server
 const startServer = async() => {
   try {
-  // Initialize databases with retry logic
+    // Initialize databases with retry logic
     let retryCount = 0;
     const maxRetries = 3;
 
@@ -1313,6 +1313,9 @@ const startServer = async() => {
         await new Promise(resolve => setTimeout(() => resolve(), delay));
       }
     }
+
+    // Start health monitor after database initialization
+    await healthMonitor.start();
 
     // Start server with production optimizations
     const server = app.listen(env.PORT, env.HOST, () => {

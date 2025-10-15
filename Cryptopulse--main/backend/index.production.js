@@ -12,6 +12,8 @@ import path from 'path';
 
 // Import comprehensive health monitor
 import healthMonitor from './lib/healthMonitor.js';
+// Import database functions
+import { initDatabases, query } from './lib/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -256,16 +258,39 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, HOST, () => {
-  console.log(`🚀 CryptoPulse Backend started from index.production.js`);
-  console.log(`📡 Server running on ${HOST}:${PORT}`);
-  console.log(`📊 Environment: ${NODE_ENV}`);
-  console.log(`🔒 Security features enabled`);
-  console.log(`📈 Health check: http://${HOST}:${PORT}/health`);
-  console.log(`🔧 Port configuration: process.env.PORT=${process.env.PORT || 'not set'}, using PORT=${PORT}`);
-  console.log(`✅ ROOT ROUTE SHOULD REDIRECT TO /health`);
-});
+// Initialize databases and start server
+const startServer = async () => {
+  try {
+    // Initialize databases
+    console.log('🔧 Initializing databases...');
+    await initDatabases();
+    console.log('✅ Databases initialized successfully');
+    
+    // Start health monitor after database initialization
+    console.log('🔧 Starting health monitor...');
+    await healthMonitor.start();
+    console.log('✅ Health monitor started successfully');
+    
+    // Start server
+    const server = app.listen(PORT, HOST, () => {
+      console.log(`🚀 CryptoPulse Backend started from index.production.js`);
+      console.log(`📡 Server running on ${HOST}:${PORT}`);
+      console.log(`📊 Environment: ${NODE_ENV}`);
+      console.log(`🔒 Security features enabled`);
+      console.log(`📈 Health check: http://${HOST}:${PORT}/health`);
+      console.log(`🔧 Port configuration: process.env.PORT=${process.env.PORT || 'not set'}, using PORT=${PORT}`);
+      console.log(`✅ ROOT ROUTE SHOULD REDIRECT TO /health`);
+    });
+    
+    return server;
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+const server = await startServer();
 
 // Handle server errors
 server.on('error', (error) => {
