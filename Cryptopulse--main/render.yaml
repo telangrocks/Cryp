@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: cryptopulse-frontend
+    env: node
+    autoDeploy: true
+    rootDir: Cryptopulse--main/frontend
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_BASE_URL
+        value: https://cryptopulse-backend-j4ne.onrender.com
+      - key: VITE_APP_NAME
+        value: CryptoPulse
+      - key: VITE_APP_VERSION
+        value: "2.0.0"
+      # IMPORTANT: Set a secure 32+ char string in Render UI or via blueprint overrides
+      - key: VITE_ENCRYPTION_KEY
+        generateValue: true
+        previewValue: "CHANGE_ME_TO_A_SECURE_RANDOM_32+_CHAR_STRING"
+      # Optional, recommended
+      - key: VITE_ENABLE_SOURCEMAPS
+        value: "false"
+      - key: VITE_API_TIMEOUT
+        value: "30000"
+      - key: VITE_API_RETRY_ATTEMPTS
+        value: "3"
+    healthCheckPath: /health
+    plan: starter
+

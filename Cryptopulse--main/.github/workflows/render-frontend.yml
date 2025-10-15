@@ -1,0 +1,62 @@
+name: "Provision & Deploy Frontend on Render"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode: blueprint (create/update) or hook (trigger deploy)'
+        required: true
+        default: 'blueprint'
+        type: choice
+        options:
+          - blueprint
+          - hook
+  push:
+    branches: [ main ]
+    paths:
+      - 'Cryptopulse--main/render.yaml'
+      - 'Cryptopulse--main/frontend/**'
+
+jobs:
+  render-blueprint-apply:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'blueprint' || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_BLUEPRINT_FILE: Cryptopulse--main/render.yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate blueprint exists
+        run: |
+          test -f "$RENDER_BLUEPRINT_FILE" || (echo "Missing $RENDER_BLUEPRINT_FILE" && exit 1)
+
+      - name: Install Render CLI
+        run: curl -fsSL https://cli.render.com/install | sh
+
+      - name: Apply Render Blueprint
+        env:
+          PATH: $HOME/.render:$PATH
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "RENDER_API_KEY not set. Add it as a repo secret." && exit 1
+          fi
+          # Login is implicit when RENDER_API_KEY is present.
+          # Apply or update services from blueprint. The CLI supports non-interactive runs.
+          render blueprint apply "$RENDER_BLUEPRINT_FILE" --auto-approve
+
+  render-deploy-hook:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'hook' }}
+    runs-on: ubuntu-latest
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_FRONTEND_DEPLOY_HOOK not set. Add it as a repo secret." && exit 1
+          fi
+          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"
+
+
