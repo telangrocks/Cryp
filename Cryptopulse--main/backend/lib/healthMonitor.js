@@ -9,6 +9,7 @@ const { Pool } = pkg;
 import { MongoClient } from 'mongodb';
 import { createClient } from 'redis';
 import { logger } from './logging.js';
+import { query } from './database.js';
 
 class HealthMonitor {
   constructor() {
@@ -131,37 +132,7 @@ class HealthMonitor {
 
   async initializeConnections() {
     try {
-      // Initialize PostgreSQL connection for health checks
-      if (process.env.DATABASE_URL) {
-        // Parse DATABASE_URL to handle SSL properly
-        const connectionString = process.env.DATABASE_URL;
-        const isProduction = process.env.NODE_ENV === 'production';
-        
-        // Remove sslmode from connection string and handle it via ssl config
-        const cleanConnectionString = connectionString.replace(/[?&]sslmode=\w+/g, '');
-        
-        // Comprehensive SSL configuration for Render.com and other providers
-        const sslConfig = isProduction ? {
-          rejectUnauthorized: false,
-          checkServerIdentity: () => undefined,
-          // Additional SSL options for compatibility
-          servername: undefined,
-          // Disable certificate validation entirely for Render
-          ca: undefined,
-          cert: undefined,
-          key: undefined
-        } : false;
-
-        this.postgresPool = new Pool({
-          connectionString: cleanConnectionString,
-          ssl: sslConfig,
-          max: 1,
-          idleTimeoutMillis: 10000,
-          connectionTimeoutMillis: 5000,
-          acquireTimeoutMillis: 5000,
-          createTimeoutMillis: 5000
-        });
-      }
+      // PostgreSQL connection is handled by database.js - no need to initialize here
 
       // Initialize MongoDB connection for health checks
       if (process.env.MONGODB_URL) {
@@ -192,22 +163,17 @@ class HealthMonitor {
   async checkPostgreSQL() {
     const startTime = Date.now();
     try {
-      if (!this.postgresPool) {
-        throw new Error('PostgreSQL not configured');
-      }
-
-      const client = await this.postgresPool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
-
+      // Use the existing database connection from database.js
+      const result = await query('SELECT NOW() as current_time, version() as version');
+      
       return {
         status: 'healthy',
         latency: Date.now() - startTime,
         error: null,
         details: {
-          connectionPool: this.postgresPool.totalCount,
-          idleConnections: this.postgresPool.idleCount,
-          waitingCount: this.postgresPool.waitingCount
+          connectionActive: true,
+          databaseTime: result.rows[0]?.current_time,
+          postgresVersion: result.rows[0]?.version
         }
       };
     } catch (error) {
@@ -215,7 +181,10 @@ class HealthMonitor {
         status: 'unhealthy',
         latency: Date.now() - startTime,
         error: error.message,
-        details: null
+        details: {
+          connectionActive: false,
+          errorType: error.code || 'unknown'
+        }
       };
     }
   }
