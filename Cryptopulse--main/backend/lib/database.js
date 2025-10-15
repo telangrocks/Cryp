@@ -3,9 +3,10 @@
 // =============================================================================
 // Database connection and query utilities for CryptoPulse backend
 
-import { Pool } from 'pg';
+import pkg from 'pg';
+const { Pool } = pkg;
 import { MongoClient } from 'mongodb';
-import Redis from 'redis';
+import { createClient } from 'redis';
 import { logger } from './logging.js';
 import fs from 'fs';
 import path from 'path';
@@ -187,7 +188,7 @@ const initRedis = async() => {
       return null;
     }
 
-    redisClient = Redis.createClient({
+    redisClient = createClient({
       url: connectionString,
       socket: {
         connectTimeout: 10000,
