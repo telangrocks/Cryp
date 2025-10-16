@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 // Use the main App component
 import App from './App';
+import './lib/error-listener';
 
 // Simplified error handling
 const handleError = (error: Error) => {

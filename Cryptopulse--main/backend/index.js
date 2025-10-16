@@ -154,6 +154,59 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(validateInput);
 
 // =============================================================================
+// DEV LOG ENDPOINT (receives logs from frontend and stores per-day file)
+// =============================================================================
+app.post('/api/dev-log', async(req, res) => {
+  try {
+    const { level = 'error', message = '', stack, name, url, userAgent, timestamp, extra } = req.body || {};
+
+    const safe = (v) => typeof v === 'string' ? v : JSON.stringify(v || '');
+
+    const entry = {
+      level: ['error', 'warn', 'info'].includes(level) ? level : 'error',
+      message: safe(message).slice(0, 2000),
+      stack: stack ? safe(stack).slice(0, 8000) : undefined,
+      name: name ? safe(name).slice(0, 256) : undefined,
+      url: url ? safe(url).slice(0, 1024) : undefined,
+      userAgent: userAgent ? safe(userAgent).slice(0, 512) : undefined,
+      timestamp: timestamp || new Date().toISOString(),
+      extra: extra || undefined,
+      receivedAt: new Date().toISOString(),
+      ip: req.ip,
+    };
+
+    const logsDir = path.join(__dirname, '..', '.dev-logs');
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    const day = new Date().toISOString().slice(0, 10);
+    const filePath = path.join(logsDir, `${day}.json`);
+
+    let existing = [];
+    if (fs.existsSync(filePath)) {
+      try {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        existing = JSON.parse(raw);
+        if (!Array.isArray(existing)) existing = [];
+      } catch {
+        existing = [];
+      }
+    }
+
+    existing.push(entry);
+    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+
+    // Also log a brief line
+    logger.info('Dev log received', { level: entry.level, message: entry.message.slice(0, 120) });
+
+    res.status(204).send();
+  } catch (e) {
+    logger.warn('Failed to persist dev log');
+    res.status(204).send();
+  }
+});
+
+// =============================================================================
 // HEALTH CHECK ENDPOINTS
 // =============================================================================
 
