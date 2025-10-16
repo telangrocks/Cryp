@@ -16,7 +16,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.join(__dirname, '..');
 
-function readRecentLogs(days = 2) {
+async function fetchRemoteLogs(days) {
+  try {
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) return [];
+    const endpoint = `${backendUrl.replace(/\/$/, '')}/api/dev-log/export?days=${days}`;
+    const res = await fetch(endpoint);
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({ logs: [] }));
+    return Array.isArray(data.logs) ? data.logs : [];
+  } catch {
+    return [];
+  }
+}
+
+function readRecentLocalLogs(days = 2) {
   const logsDir = path.join(repoRoot, '.dev-logs');
   const results = [];
   if (!fs.existsSync(logsDir)) return results;
@@ -39,8 +53,19 @@ function run(cmd, opts = {}) {
   return execSync(cmd, { stdio: 'inherit', cwd: repoRoot, ...opts });
 }
 
-function main() {
-  const logs = readRecentLogs(2);
+async function main() {
+  const days = parseInt(process.env.DEV_LOG_DAYS || '2', 10);
+  let logs = readRecentLocalLogs(days);
+  if (logs.length === 0) {
+    try {
+      const nodeFetch = await import('node-fetch').then(m => m.default).catch(() => null);
+      if (nodeFetch) {
+        global.fetch = nodeFetch;
+      }
+    } catch {}
+    const remote = await fetchRemoteLogs(days);
+    if (Array.isArray(remote) && remote.length > 0) logs = remote;
+  }
   const errorCount = logs.filter(l => (l?.level || 'error') === 'error').length;
   const warnCount = logs.filter(l => (l?.level || '') === 'warn').length;
   console.log(`Dev Log Summary (last 2 days): errors=${errorCount} warnings=${warnCount} total=${logs.length}`);

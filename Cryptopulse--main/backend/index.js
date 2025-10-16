@@ -206,6 +206,34 @@ app.post('/api/dev-log', async(req, res) => {
   }
 });
 
+// Export recent dev logs (for CI fetch). Query: days (default 2)
+app.get('/api/dev-log/export', (req, res) => {
+  try {
+    const days = Math.max(1, Math.min(7, parseInt(req.query.days || '2', 10)));
+    const logsDir = path.join(__dirname, '..', '.dev-logs');
+    const today = new Date();
+    const result = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(today.getTime() - i * 24 * 3600 * 1000);
+      const name = d.toISOString().slice(0, 10) + '.json';
+      const filePath = path.join(logsDir, name);
+      if (fs.existsSync(filePath)) {
+        try {
+          const arr = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+          if (Array.isArray(arr)) {
+            result.push(...arr);
+          }
+        } catch {
+          // skip corrupt file
+        }
+      }
+    }
+    res.status(200).json({ success: true, logs: result, count: result.length });
+  } catch (e) {
+    res.status(200).json({ success: true, logs: [], count: 0 });
+  }
+});
+
 // =============================================================================
 // HEALTH CHECK ENDPOINTS
 // =============================================================================

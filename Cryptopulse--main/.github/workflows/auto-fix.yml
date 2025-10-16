@@ -30,6 +30,9 @@ jobs:
         run: pnpm install --frozen-lockfile=false
 
       - name: Run analyzer
+        env:
+          BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
+          DEV_LOG_DAYS: '2'
         run: node scripts/dev-log-analyzer.js
 
 
