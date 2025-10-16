@@ -29,26 +29,10 @@ export default defineConfig({
 
   // Build configuration
   build: {
-    // ULTRA-OPTIMIZED build configuration
-    minify: 'terser',
-    sourcemap: false,
-    chunkSizeWarningLimit: 1000,
-    target: ['es2018', 'chrome70', 'firefox65', 'safari12', 'edge79'],
+    // Enable source maps for better debugging
+    sourcemap: true,
 
-    // ESBuild configuration for better compatibility
-    esbuild: {
-      target: 'es2018',
-      supported: {
-        'destructuring': true,
-        'dynamic-import': true,
-      },
-      // Production-ready optimizations
-      minifyIdentifiers: process.env['NODE_ENV'] === 'production',
-      minifySyntax: process.env['NODE_ENV'] === 'production',
-      minifyWhitespace: process.env['NODE_ENV'] === 'production',
-    },
-
-    // Optimize chunks for faster loading with better error handling
+    // Optimize chunk splitting
     rollupOptions: {
       onwarn(warning: any, warn: any) {
         // Suppress mixed import warnings
@@ -104,6 +88,18 @@ export default defineConfig({
           }
           return 'assets/[name]-[hash:8].[ext]';
         },
+      },
+    },
+
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+
+    // Minify options
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console for error tracking
+        drop_debugger: true,
       },
     },
   },
