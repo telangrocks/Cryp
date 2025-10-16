@@ -1,0 +1,46 @@
+name: Post-Deploy Verification
+
+on:
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [render-deployed]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify BACKEND_URL is provided
+        run: |
+          if [ -z "${{ secrets.RENDER_BACKEND_URL }}" ]; then
+            echo "RENDER_BACKEND_URL secret is not set." >&2
+            exit 1
+          fi
+
+      - name: Ping /api/status
+        env:
+          BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
+        run: |
+          set -e
+          echo "Checking $BACKEND_URL/api/status"
+          for i in {1..5}; do
+            if curl -fsS "$BACKEND_URL/api/status" > /dev/null; then
+              echo "API status OK"
+              exit 0
+            fi
+            echo "Retry $i..." && sleep 5
+          done
+          echo "Failed to reach /api/status" >&2
+          exit 1
+
+      - name: Fetch /api/dev-log/export?days=1
+        env:
+          BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
+        run: |
+          set -e
+          echo "Fetching $BACKEND_URL/api/dev-log/export?days=1"
+          curl -fsS "$BACKEND_URL/api/dev-log/export?days=1" | head -c 500 || (echo "Failed to fetch dev logs" >&2; exit 1)
+
+
