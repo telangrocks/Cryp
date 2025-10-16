@@ -156,3 +156,8 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Start the application
 initializeApp();
+
+// Export the robust app component for use in main.tsx
+export default function RobustApp() {
+  return null; // This component is not used directly, initializeApp handles everything
+}
