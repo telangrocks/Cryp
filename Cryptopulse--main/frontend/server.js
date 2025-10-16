@@ -9,8 +9,22 @@ const app = express();
 // Get port from environment variable (Render requirement)
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+// Optimize static file serving with proper caching headers
+app.use(express.static(path.join(__dirname, 'dist'), {
+  // Enable ETags for better caching
+  etag: true,
+  // Set cache control for static assets
+  setHeaders: (res, path) => {
+    // Cache JS/CSS files for 1 year (they have hashes)
+    if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // Cache HTML for 1 hour
+    else if (path.match(/\.html$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
 
 // Handle React Router - send all requests to index.html
 app.get('*', (req, res) => {
