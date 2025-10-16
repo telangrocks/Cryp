@@ -3,8 +3,8 @@
  * World-class PWA implementation with advanced caching strategies
  */
 
-// Cache version - will be overridden by query param on registration
-const CACHE_VERSION = (self && self.registration && self.registration.scope && new URL(self.registration.scope).searchParams.get('v')) || '1.0.0';
+// Cache version - stable version for consistent caching
+const CACHE_VERSION = '1.0.0';
 const _CACHE_NAME = `cryptopulse-v${CACHE_VERSION}`;
 const STATIC_CACHE = `cryptopulse-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `cryptopulse-dynamic-v${CACHE_VERSION}`;

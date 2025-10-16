@@ -177,10 +177,28 @@
     </div>
     
     <div id="root"></div>
-    <script type="module" src="/src/main-simple.tsx"></script>
+    <script type="module" crossorigin src="/assets/index-DxrBjJq1.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-B3ZIOLOa.js">
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-DRaR3PU2.js">
     
     <!-- Service Worker Registration (versioned) + Loader failsafe -->
     <script>
+      // Global error handler to prevent external script errors from breaking the app
+      window.addEventListener('error', (event) => {
+        // Ignore errors from external scripts or browser extensions
+        if (event.filename && (
+          event.filename.includes('extension://') ||
+          event.filename.includes('chrome-extension://') ||
+          event.filename.includes('moz-extension://') ||
+          event.filename.includes('safari-extension://') ||
+          event.filename.includes('VM') ||
+          event.message.includes('xAX')
+        )) {
+          event.preventDefault();
+          return false;
+        }
+      });
+
       // Failsafe: ensure HTML loader never persists beyond 8s
       (function ensureLoaderRemoved() {
         const FORCE_HIDE_MS = 8000;
@@ -191,42 +209,32 @@
         }, FORCE_HIDE_MS);
       })();
 
-      // Versioned SW registration to force updates on each deploy
+      // Stable SW registration - only update on actual code changes
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const swVersion = 'v' + Date.now();
-          const swUrl = `/sw.js?${swVersion}`;
-
-          navigator.serviceWorker.register(swUrl)
+          navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-              // Try to update immediately
-              registration.update().catch(() => {});
+              // Check for updates every 5 minutes
+              setInterval(() => {
+                registration.update().catch(() => {});
+              }, 5 * 60 * 1000);
 
-              // Swap to waiting service worker without manual confirm
-              function promptAndReload() {
-                try {
-                  if (registration.waiting) {
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                  }
-                } catch (_) {}
-                setTimeout(() => window.location.reload(), 300);
-              }
-
-              if (registration.waiting) {
-                promptAndReload();
-              }
-
+              // Handle updates gracefully
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (!newWorker) return;
+                
                 newWorker.addEventListener('statechange', () => {
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    promptAndReload();
+                    // Notify user of update available
+                    console.log('[SW] Update available, will apply on next page load');
                   }
                 });
               });
             })
-            .catch(() => {});
+            .catch((error) => {
+              console.warn('[SW] Registration failed:', error);
+            });
         });
       }
     </script>
