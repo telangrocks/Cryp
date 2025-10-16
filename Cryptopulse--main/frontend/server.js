@@ -16,23 +16,37 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   // Set cache control for static assets
   setHeaders: (res, path) => {
     // Cache JS/CSS files for 1 year (they have hashes)
-    if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
-    // Cache HTML for 1 hour
+    // Cache SVG files for 1 year with proper content-type
+    else if (path.match(/\.svg$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    }
+    // Cache HTML for shorter time (5 minutes) for better updates
     else if (path.match(/\.html$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=300');
     }
   }
 }));
 
 // Handle React Router - send all requests to index.html
 app.get('*', (req, res) => {
+  // Set appropriate cache headers for HTML
+  if (req.path === '/' || req.path === '/index.html') {
+    res.setHeader('Cache-Control', 'public, max-age=180'); // 3 minutes for root
+  } else {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.status(200).send('healthy');
 });
 

@@ -91,13 +91,19 @@ export default defineConfig({
           }
           return undefined;
         },
-        // Ensure consistent chunk naming
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-          return `assets/[name]-[hash].js`;
+        // Ensure consistent chunk naming with proper cache busting
+        chunkFileNames: 'assets/[name]-[hash:8].js',
+        entryFileNames: 'assets/[name]-[hash:8].js',
+        assetFileNames: (assetInfo) => {
+          // Use shorter hashes for better cache busting
+          if (assetInfo.name && assetInfo.name.match(/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i)) {
+            return 'assets/images/[name]-[hash:8].[ext]';
+          }
+          if (assetInfo.name && assetInfo.name.match(/\.(woff2?|eot|ttf|otf)$/i)) {
+            return 'assets/fonts/[name]-[hash:8].[ext]';
+          }
+          return 'assets/[name]-[hash:8].[ext]';
         },
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
   },
