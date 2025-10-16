@@ -1,0 +1,65 @@
+name: Health Monitor
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+      - name: Run monitor checks
+        env:
+          RENDER_BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
+          RENDER_FRONTEND_URL: ${{ secrets.RENDER_FRONTEND_URL }}
+          DEV_LOG_DAYS: '1'
+          ERROR_THRESHOLD: '3'
+          WARN_THRESHOLD: '10'
+        run: node scripts/monitor.js
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-report
+          path: monitor-report.json
+      - name: Create incident issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('monitor-report.json', 'utf8');
+            const title = `Incident: Service degraded at ${new Date().toISOString()}`;
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: '```
+              ' + body + '
+              ```',
+              labels: ['incident','automation']
+            });
+            core.info(`Created issue #${issue.data.number}`);
+      - name: Optional auto-redeploy
+        if: failure()
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_IDS: ${{ secrets.RENDER_SERVICE_IDS }}
+        run: |
+          echo "Auto-redeploy cooldown not implemented here; single redeploy attempt." 
+          node scripts/render-deploy.js || true
+
+

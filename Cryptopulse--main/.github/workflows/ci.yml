@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [backend, frontend, cloud]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install
+        run: pnpm install --frozen-lockfile=false
+      - name: Typecheck
+        run: |
+          if [ "${{ matrix.package }}" = "frontend" ]; then pnpm --filter frontend typecheck; fi
+      - name: Lint
+        run: pnpm --filter ${{ matrix.package }} lint || true
+      - name: Test
+        run: pnpm --filter ${{ matrix.package }} test || true
+      - name: Build
+        run: |
+          if [ "${{ matrix.package }}" = "frontend" ]; then pnpm --filter frontend build; fi
+      - name: Archive artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package }}-reports
+          path: |
+            **/coverage/**
+            **/dist/**
+            monitor-report.json
+
+

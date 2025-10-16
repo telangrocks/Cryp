@@ -1,0 +1,34 @@
+name: Render Deploy
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+      - name: Trigger Render deploys and wait
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_IDS: ${{ secrets.RENDER_SERVICE_IDS }}
+          RENDER_DEPLOY_TIMEOUT_MS: '900000'
+        run: node scripts/render-deploy.js
+      - name: Post-deploy verify
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Post-Deploy Verification
+          ref: ${{ github.ref }}
+
+
