@@ -4,6 +4,7 @@
 // Lightweight production backend optimized for Render free tier
 
 import express from 'express';
+import fs from 'fs';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -73,6 +74,77 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
+});
+
+// -----------------------------------------------------------------------------
+// DEV LOG ENDPOINTS (production-safe)
+// -----------------------------------------------------------------------------
+app.post('/api/dev-log', (req, res) => {
+  try {
+    const { level = 'error', message = '', stack, name, url, userAgent, timestamp, extra } = req.body || {};
+    const safe = (v) => typeof v === 'string' ? v : JSON.stringify(v || '');
+    const entry = {
+      level: ['error', 'warn', 'info'].includes(level) ? level : 'error',
+      message: safe(message).slice(0, 2000),
+      stack: stack ? safe(stack).slice(0, 8000) : undefined,
+      name: name ? safe(name).slice(0, 256) : undefined,
+      url: url ? safe(url).slice(0, 1024) : undefined,
+      userAgent: userAgent ? safe(userAgent).slice(0, 512) : undefined,
+      timestamp: timestamp || new Date().toISOString(),
+      extra: extra || undefined,
+      receivedAt: new Date().toISOString(),
+      ip: req.ip,
+    };
+
+    const logsDir = path.join(__dirname, '..', '.dev-logs');
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    const day = new Date().toISOString().slice(0, 10);
+    const filePath = path.join(logsDir, `${day}.json`);
+
+    let existing = [];
+    if (fs.existsSync(filePath)) {
+      try {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        existing = JSON.parse(raw);
+        if (!Array.isArray(existing)) existing = [];
+      } catch {
+        existing = [];
+      }
+    }
+
+    existing.push(entry);
+    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2));
+
+    res.status(204).send();
+  } catch (e) {
+    res.status(204).send();
+  }
+});
+
+// Export recent dev logs (for CI fetch)
+app.get('/api/dev-log/export', (req, res) => {
+  try {
+    const days = Math.max(1, Math.min(7, parseInt(req.query.days || '1', 10)));
+    const logsDir = path.join(__dirname, '..', '.dev-logs');
+    const today = new Date();
+    const result = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(today.getTime() - i * 24 * 3600 * 1000);
+      const name = d.toISOString().slice(0, 10) + '.json';
+      const filePath = path.join(logsDir, name);
+      if (fs.existsSync(filePath)) {
+        try {
+          const arr = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+          if (Array.isArray(arr)) result.push(...arr);
+        } catch {}
+      }
+    }
+    res.status(200).json({ success: true, logs: result, count: result.length });
+  } catch {
+    res.status(200).json({ success: true, logs: [], count: 0 });
+  }
 });
 
 // Comprehensive health check endpoint
