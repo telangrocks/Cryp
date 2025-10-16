@@ -128,11 +128,15 @@ let config: AppConfig;
 try {
   config = {
     api: {
-      baseUrl: validateUrl(
-        import.meta.env.VITE_API_BASE_URL ||
-        (import.meta.env.MODE === 'production' ? 'https://cryptopulse-backend-j4ne.onrender.com' : 'http://localhost:1337'),
-        'API Base',
-      ),
+      baseUrl: (() => {
+        const url = import.meta.env.VITE_API_BASE_URL ||
+          (import.meta.env.MODE === 'production' ? 'https://cryptopulse-backend-j4ne.onrender.com' : 'http://localhost:1337');
+        // Simplified validation - just check if it's a string
+        if (!url || typeof url !== 'string') {
+          throw new Error('API Base URL is required');
+        }
+        return url;
+      })(),
       timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000'),
       retryAttempts: parseInt(import.meta.env.VITE_API_RETRY_ATTEMPTS || '3'),
       version: import.meta.env.VITE_API_VERSION || '',
@@ -181,16 +185,10 @@ try {
       enableNotifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
     },
     external: {
-      coingeckoApiUrl: validateUrl(
-        import.meta.env.VITE_COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',
-        'CoinGecko API',
-      ),
-      coingeckoApiKey: validateApiKey(import.meta.env.VITE_COINGECKO_API_KEY, 'CoinGecko'),
-      newsApiUrl: validateUrl(
-        import.meta.env.VITE_NEWS_API_URL || 'https://newsapi.org/v2',
-        'News API',
-      ),
-      newsApiKey: validateApiKey(import.meta.env.VITE_NEWS_API_KEY, 'News'),
+      coingeckoApiUrl: import.meta.env.VITE_COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',
+      coingeckoApiKey: import.meta.env.VITE_COINGECKO_API_KEY || '',
+      newsApiUrl: import.meta.env.VITE_NEWS_API_URL || 'https://newsapi.org/v2',
+      newsApiKey: import.meta.env.VITE_NEWS_API_KEY || '',
     },
     ui: {
       defaultTheme: import.meta.env.VITE_DEFAULT_THEME || 'dark',

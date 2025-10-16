@@ -34,30 +34,26 @@ class Logger {
 
   debug(message: string, context?: any): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      // Debug logging handled by monitoring system
-      // console.debug(this.formatMessage('DEBUG', message, context));
+      console.debug(this.formatMessage('DEBUG', message, context));
     }
   }
 
   info(message: string, context?: any): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      // Info logging handled by monitoring system
-      // console.info(this.formatMessage('INFO', message, context));
+      console.info(this.formatMessage('INFO', message, context));
     }
   }
 
   warn(message: string, context?: any): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      // Warning logging handled by monitoring system
-      // console.warn(this.formatMessage('WARN', message, context));
+      console.warn(this.formatMessage('WARN', message, context));
     }
   }
 
   error(message: string, error?: Error, context?: any): void {
     if (this.shouldLog(LogLevel.ERROR)) {
-      // Error logging handled by monitoring system
-      // const errorInfo = error ? `\nError: ${error.message}\nStack: ${error.stack}` : '';
-      // console.error(this.formatMessage('ERROR', message, context) + errorInfo);
+      const errorInfo = error ? `\nError: ${error.message}\nStack: ${error.stack}` : '';
+      console.error(this.formatMessage('ERROR', message, context) + errorInfo);
     }
   }
 }

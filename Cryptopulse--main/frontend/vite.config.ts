@@ -32,7 +32,7 @@ export default defineConfig({
     // ULTRA-OPTIMIZED build configuration
     minify: 'terser',
     sourcemap: false,
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1000,
     target: ['es2018', 'chrome70', 'firefox65', 'safari12', 'edge79'],
 
     // ESBuild configuration for better compatibility

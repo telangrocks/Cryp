@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-// Use simple app to avoid complex error handling issues
-import SimpleApp from './main-simple';
+// Use robust app with proper error handling
+import RobustApp from './main-robust';
 
 // Simplified error handling
 const handleError = (error: Error) => {
@@ -108,7 +108,7 @@ function initializeApp(): void {
     const root = createRoot(rootElement);
     root.render(
       <StrictMode>
-        <SimpleApp />
+        <RobustApp />
       </StrictMode>,
     );
   } catch (error) {
