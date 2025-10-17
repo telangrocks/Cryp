@@ -2,10 +2,19 @@ import path from 'path';
 
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      filename: 'dist/stats.html',
+    }),
+  ],
 
   // Logging
   logLevel: 'warn',
@@ -29,8 +38,8 @@ export default defineConfig({
 
   // Build configuration
   build: {
-    // Enable source maps for better debugging
-    sourcemap: true,
+    // Disable source maps in production for security
+    sourcemap: false,
 
     // Optimize chunk splitting
     rollupOptions: {
@@ -98,7 +107,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false, // Keep console for error tracking
+        drop_console: true, // Remove console.logs in production
         drop_debugger: true,
       },
     },

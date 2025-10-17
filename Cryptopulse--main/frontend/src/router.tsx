@@ -55,7 +55,7 @@ const AuthScreen = lazy(() => import('./components/AuthScreen').catch(err => {
   ) };
 }));
 
-const NotFound = lazy(() => import('./components/ErrorFallback').catch(err => {
+const NotFound = lazy(() => import('./pages/NotFound').catch(err => {
   console.error('Failed to load NotFound:', err);
   return { default: () => (
     <div className="flex items-center justify-center min-h-screen">
@@ -66,6 +66,23 @@ const NotFound = lazy(() => import('./components/ErrorFallback').catch(err => {
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Go Home
+        </button>
+      </div>
+    </div>
+  ) };
+}));
+
+const Privacy = lazy(() => import('./pages/Privacy').catch(err => {
+  console.error('Failed to load Privacy:', err);
+  return { default: () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error loading Privacy page</h1>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Reload Page
         </button>
       </div>
     </div>
@@ -146,6 +163,17 @@ const router = createBrowserRouter([
       <RouteErrorBoundary>
         <Suspense fallback={<LoadingFallback />}>
           <AuthScreen />
+        </Suspense>
+      </RouteErrorBoundary>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  {
+    path: '/privacy',
+    element: (
+      <RouteErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <Privacy />
         </Suspense>
       </RouteErrorBoundary>
     ),

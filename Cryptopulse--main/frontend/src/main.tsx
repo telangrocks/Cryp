@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { HelmetProvider } from 'react-helmet-async';
 import AppRouter from './router';
 import ErrorBoundary from './components/ErrorBoundary';
 import { setupErrorLogging } from './utils/errorLogger';
@@ -38,9 +39,11 @@ try {
   
   root.render(
     <React.StrictMode>
-      <ErrorBoundary>
-        <AppRouter />
-      </ErrorBoundary>
+      <HelmetProvider>
+        <ErrorBoundary>
+          <AppRouter />
+        </ErrorBoundary>
+      </HelmetProvider>
     </React.StrictMode>
   );
 
