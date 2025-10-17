@@ -60,3 +60,5 @@ export function useAuthenticatedAPI() {
     isAuthenticated: !!user?.sessionToken,
   };
 }
+
+

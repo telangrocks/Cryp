@@ -96,10 +96,10 @@ function TradeConfirmationWrapper() {
     exchange: import.meta.env.VITE_DEFAULT_EXCHANGE || 'wazirx',
   };
   const handleConfirm = (confirmed: boolean, tradeData?: unknown) => {
-    console.log('Trade confirmed:', confirmed, tradeData);
+    
   };
   const handleClose = () => {
-    console.log('Trade confirmation closed');
+    
   };
   return (
     <EnhancedTradeConfirmation
@@ -311,3 +311,5 @@ export function AppRoutes() {
     </RouteErrorBoundary>
   );
 }
+
+

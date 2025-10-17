@@ -125,3 +125,4 @@ afterEach(() => {
 process.env.VITE_API_BASE_URL = 'http://localhost:1337';
 process.env.VITE_ENCRYPTION_KEY = 'test-encryption-key-32-characters';
 process.env.NODE_ENV = 'test';
+

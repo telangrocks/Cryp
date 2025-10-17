@@ -113,3 +113,5 @@ export interface Exchange {
   validateSymbol(symbol: string): boolean;
   formatSymbol(symbol: string): string;
 }
+
+

@@ -327,10 +327,7 @@ export const securityMonitor = {
   },
 
   logSecurityEvent: (event: string, details: Record<string, any>): void => {
-    console.info('Security event:', {
-      event,
-      details,
-      timestamp: new Date().toISOString(),
+    .toISOString(),
     });
   },
 };
@@ -352,7 +349,7 @@ export const setSecurityHeaders = (): void => {
   Object.entries(SECURITY_CONFIG.SECURITY_HEADERS).forEach(([header, value]) => {
     // Note: In a real application, these would be set by the server
     // This is just for demonstration
-    console.log(`Security header: ${header}: ${value}`);
+    
   });
 };
 
@@ -382,3 +379,5 @@ export const initializeSecurity = (): void => {
 
 // Export security configuration
 export { SECURITY_CONFIG };
+
+

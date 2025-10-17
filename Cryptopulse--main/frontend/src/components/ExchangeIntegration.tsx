@@ -79,7 +79,7 @@ export default function ExchangeIntegration() {
     try {
       // Simulate API call to save credentials
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // console.log('Credentials saved:', credentials);
+      // 
     } catch (error) {
       // console.error('Failed to save credentials:', error);
     } finally {
@@ -119,7 +119,7 @@ export default function ExchangeIntegration() {
     try {
       // Simulate trade execution
       await new Promise(resolve => setTimeout(resolve, 2000));
-      // console.log(`Executed ${side} ${amount} ${pair} on ${selectedExchange}`);
+      // 
       alert(`Trade executed: ${side} ${amount} ${pair}`);
     } catch (error) {
       // console.error('Trade execution failed:', error);
@@ -320,3 +320,4 @@ export default function ExchangeIntegration() {
     </div>
   );
 }
+

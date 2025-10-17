@@ -508,3 +508,4 @@ describe('Frontend Security', () => {
     });
   });
 });
+

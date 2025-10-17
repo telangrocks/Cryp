@@ -47,7 +47,7 @@ try {
     </React.StrictMode>
   );
 
-  console.log('✅ Application rendered successfully');
+  
 
   // Register service worker after render
   registerServiceWorker();
@@ -89,3 +89,5 @@ try {
     </div>
   `;
 }
+
+

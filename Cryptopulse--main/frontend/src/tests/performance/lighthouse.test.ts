@@ -379,3 +379,5 @@ test.describe('Performance Regression', () => {
     expect(average).toBeLessThan(3000); // Less than 3 seconds
   });
 });
+
+

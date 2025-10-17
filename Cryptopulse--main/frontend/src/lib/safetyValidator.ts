@@ -586,3 +586,5 @@ export class SafetyValidator {
 
 // Global safety validator instance
 export const globalSafetyValidator = new SafetyValidator();
+
+

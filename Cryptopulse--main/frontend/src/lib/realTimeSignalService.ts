@@ -41,7 +41,7 @@ export class RealTimeSignalService {
 
   private initializeService(): void {
     // Initialize the real-time signal service
-    console.log('Real-time signal service initialized');
+    
   }
 
   public subscribe(filter: SignalFilter, callback: (signal: TradeSignal) => void): string {
@@ -138,3 +138,5 @@ export function getSignalService(): RealTimeSignalService {
 export function createSignalService(): RealTimeSignalService {
   return new RealTimeSignalService();
 }
+
+

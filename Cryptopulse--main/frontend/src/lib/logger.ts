@@ -34,13 +34,13 @@ class Logger {
 
   debug(message: string, context?: any): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.debug(this.formatMessage('DEBUG', message, context));
+      );
     }
   }
 
   info(message: string, context?: any): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.info(this.formatMessage('INFO', message, context));
+      );
     }
   }
 
@@ -79,3 +79,4 @@ export const logError = (message: string, error?: Error, context?: any): void =>
 };
 
 export default logger;
+

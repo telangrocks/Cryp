@@ -69,3 +69,5 @@ export class SimpleCache<T = any> {
 export const globalCache = new SimpleCache();
 
 export default globalCache;
+
+

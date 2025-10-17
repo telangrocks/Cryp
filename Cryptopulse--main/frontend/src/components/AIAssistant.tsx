@@ -192,3 +192,5 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
     </div>
   );
 }
+
+

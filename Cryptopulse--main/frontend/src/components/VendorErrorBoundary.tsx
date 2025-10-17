@@ -194,3 +194,5 @@ const VendorErrorBoundary: React.FC<VendorErrorBoundaryProps> = ({
 };
 
 export default VendorErrorBoundary;
+
+

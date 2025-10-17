@@ -118,3 +118,5 @@ function updateLinkTag(rel: string, href: string) {
 
   link.setAttribute('href', href);
 }
+
+

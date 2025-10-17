@@ -277,3 +277,4 @@ export class CoinbaseExchange implements Exchange {
     return btoa(String.fromCharCode(...hashArray));
   }
 }
+

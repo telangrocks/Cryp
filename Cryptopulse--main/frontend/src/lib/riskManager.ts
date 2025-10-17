@@ -472,7 +472,7 @@ export class FrontendRiskManager {
    */
   updateConfig(newConfig: Partial<RiskConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    console.info('Risk manager configuration updated', newConfig);
+    
   }
 
   /**
@@ -487,7 +487,7 @@ export class FrontendRiskManager {
       maxDrawdown: 0,
       startTime: Date.now(),
     };
-    console.info('Daily risk metrics reset');
+    
   }
 
   /**
@@ -512,3 +512,5 @@ export class FrontendRiskManager {
 
 // Global risk manager instance
 export const globalRiskManager = new FrontendRiskManager();
+
+

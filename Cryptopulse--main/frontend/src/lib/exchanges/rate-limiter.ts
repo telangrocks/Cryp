@@ -245,3 +245,5 @@ export class ExchangeRateLimitManager {
 
 // Global rate limit manager instance
 export const globalRateLimitManager = new ExchangeRateLimitManager();
+
+

@@ -130,7 +130,7 @@ class ErrorLogger {
       }
     };
 
-    console.log('✅ [ErrorLogger] Global error handlers initialized');
+    
   }
 
   private logError(error: ErrorDetails, logToConsole = true): void {
@@ -168,7 +168,7 @@ class ErrorLogger {
 
   public clearErrors(): void {
     this.errorQueue = [];
-    console.log('[ErrorLogger] Error queue cleared');
+    
   }
 
   public getLatestError(): ErrorDetails | null {
@@ -192,15 +192,17 @@ class ErrorLogger {
 
 export const setupErrorLogging = (): void => {
   const logger = ErrorLogger.getInstance();
-  console.log('✅ [ErrorLogger] Initialized successfully');
+  
   
   // Make logger available globally for debugging
   if (typeof window !== 'undefined') {
     (window as any).__errorLogger = logger;
-    console.log('💡 Debug tip: Access error logger via window.__errorLogger');
+    
   }
 };
 
 export const getErrorLogger = (): ErrorLogger => {
   return ErrorLogger.getInstance();
 };
+
+
