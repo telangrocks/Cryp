@@ -1,6 +1,8 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import compression from 'compression';
+import helmet from 'helmet';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,64 +12,111 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// Optimize static file serving with proper caching headers
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${req.method}] ${req.path} - ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Adjust based on your needs
+  crossOriginEmbedderPolicy: false
+}));
+
+// Compression middleware
+app.use(compression());
+
+// Parse JSON bodies
+app.use(express.json());
+
+// Serve static files with proper caching and security
 app.use(express.static(path.join(__dirname, 'dist'), {
-  // Enable ETags for better caching
+  maxAge: isDevelopment ? 0 : '1y',
   etag: true,
-  // Set cache control for static assets
-  setHeaders: (res, path) => {
-    // Cache JS/CSS files for 1 year (they have hashes)
-    if (path.match(/\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot)$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // Don't cache index.html
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
-    // Cache SVG files for 1 year with proper content-type
-    else if (path.match(/\.svg$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    // Don't expose source maps in production
+    else if (filePath.endsWith('.map') && !isDevelopment) {
+      res.status(404).end();
+      return;
     }
-    // Cache HTML for shorter time (5 minutes) for better updates
-    else if (path.match(/\.html$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=300');
+    // Cache static assets for 1 year (they have hashes)
+    else if (filePath.match(/\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot|svg)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      if (filePath.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      }
     }
   }
 }));
 
 // Health check endpoint - CRITICAL for Render (MUST be before catch-all route)
 app.get('/health', (req, res) => {
-  const healthcheck = {
+  const healthStatus = {
     status: 'healthy',
-    uptime: process.uptime(),
+    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
     memory: {
       used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
       total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-      rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100)
     },
-    environment: process.env.NODE_ENV || 'development'
+    version: process.env.npm_package_version || '2.0.0'
   };
   
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  res.status(200).json(healthcheck);
+  res.status(200).json(healthStatus);
 });
 
-// Handle React Router - send all requests to index.html
+// CRITICAL: SPA fallback - ALL other routes serve index.html
+// This allows React Router to handle client-side routing
 app.get('*', (req, res) => {
+  // Skip if requesting static assets (they should be handled by static middleware)
+  if (req.path.includes('.')) {
+    return res.status(404).send('File not found');
+  }
+  
   // Set appropriate cache headers for HTML
   if (req.path === '/' || req.path === '/index.html') {
     res.setHeader('Cache-Control', 'public, max-age=180'); // 3 minutes for root
   } else {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   }
+  
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('❌ Server Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: isDevelopment ? err.message : 'Something went wrong'
+  });
 });
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('═══════════════════════════════════════════════════');
+  console.log('🚀 CryptoPulse Server Started');
+  console.log('═══════════════════════════════════════════════════');
+  console.log(`📡 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`💾 Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+  console.log(`⏱️  Started: ${new Date().toISOString()}`);
+  console.log('═══════════════════════════════════════════════════');
 });
 
 // Graceful shutdown handler - CRITICAL
@@ -108,17 +157,17 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Memory monitoring (every 30 seconds)
+// Memory monitoring (every 2 minutes)
 setInterval(() => {
   const memUsage = process.memoryUsage();
   const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+  const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
   
-  console.log(`💾 Memory Usage: ${heapUsedMB}MB / 512MB`);
+  console.log(`💾 Memory Usage: ${heapUsedMB}MB / ${heapTotalMB}MB`);
   
-  // Warning if approaching limit
   if (heapUsedMB > 400) {
-    console.warn('⚠️  WARNING: Memory usage high!');
+    console.warn('⚠️  WARNING: High memory usage detected!');
   }
-}, 30000);
+}, 120000);
 
 export default server;

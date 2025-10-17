@@ -32,7 +32,7 @@ export default defineConfig({
   // Build configuration
   build: {
     // Disable source maps in production for security
-    sourcemap: false,
+    sourcemap: process.env.NODE_ENV !== 'production',
 
     // Optimize chunk splitting
     rollupOptions: {

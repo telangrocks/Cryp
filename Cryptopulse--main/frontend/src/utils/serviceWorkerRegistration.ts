@@ -56,12 +56,12 @@ export const registerServiceWorker = async (): Promise<void> => {
       }
     });
 
-    // Check for updates periodically (every hour)
+    // Check for updates every 24 hours (not on every page load)
     setInterval(() => {
       registration.update().catch((err) => {
         console.warn('[SW] Update check failed:', err);
       });
-    }, 60 * 60 * 1000);
+    }, 24 * 60 * 60 * 1000); // 24 hours
 
   } catch (error) {
     console.error('❌ [SW] Service Worker registration failed:', error);
