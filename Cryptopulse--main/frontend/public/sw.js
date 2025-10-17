@@ -1,6 +1,7 @@
 // Enhanced Service Worker v1.0.1
 const SW_VERSION = '1.0.1';
 const CACHE_NAME = `cryptopulse-cache-v${SW_VERSION}`;
+const CACHE_SIZE_LIMIT = 50; // Max cached items to prevent memory issues
 
 console.log(`[SW] Loaded version: ${SW_VERSION}`);
 
@@ -82,9 +83,19 @@ async function handleRequest(request) {
       const networkResponse = await fetch(request.clone(), fetchOptions);
       clearTimeout(timeoutId);
 
-      // Cache successful responses
+      // Cache successful responses with size limit
       if (networkResponse.ok && networkResponse.status === 200) {
         const cache = await caches.open(CACHE_NAME);
+        
+        // Check cache size before adding
+        const cacheKeys = await cache.keys();
+        if (cacheKeys.length >= CACHE_SIZE_LIMIT) {
+          // Remove oldest entries to make room
+          const keysToDelete = cacheKeys.slice(0, 10); // Remove 10 oldest
+          await Promise.all(keysToDelete.map(key => cache.delete(key)));
+          console.log(`[SW] Cache size limit reached, removed ${keysToDelete.length} old entries`);
+        }
+        
         cache.put(request, networkResponse.clone()).catch((err) => {
           console.warn(`[SW] Failed to cache ${request.url}:`, err);
         });

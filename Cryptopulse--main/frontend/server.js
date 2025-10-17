@@ -6,8 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 
-// Get port from environment variable (Render requirement)
-const PORT = process.env.PORT || 3000;
+// Configuration
+const PORT = process.env.PORT || 10000;
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Optimize static file serving with proper caching headers
 app.use(express.static(path.join(__dirname, 'dist'), {
@@ -31,6 +32,26 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   }
 }));
 
+// Health check endpoint - CRITICAL for Render (MUST be before catch-all route)
+app.get('/health', (req, res) => {
+  const healthcheck = {
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+    },
+    environment: process.env.NODE_ENV || 'development'
+  };
+  
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.status(200).json(healthcheck);
+});
+
 // Handle React Router - send all requests to index.html
 app.get('*', (req, res) => {
   // Set appropriate cache headers for HTML
@@ -42,26 +63,62 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.status(200).send('healthy');
-});
-
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`💾 Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  process.exit(0);
+// Graceful shutdown handler - CRITICAL
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} signal received: starting graceful shutdown`);
+  
+  server.close((err) => {
+    if (err) {
+      console.error('❌ Error during server shutdown:', err);
+      process.exit(1);
+    }
+    
+    console.log('✅ HTTP server closed successfully');
+    console.log('🔌 All connections closed');
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('⚠️  Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+// Signal handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Uncaught exception handler
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  process.exit(1);
 });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  process.exit(0);
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
+
+// Memory monitoring (every 30 seconds)
+setInterval(() => {
+  const memUsage = process.memoryUsage();
+  const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+  
+  console.log(`💾 Memory Usage: ${heapUsedMB}MB / 512MB`);
+  
+  // Warning if approaching limit
+  if (heapUsedMB > 400) {
+    console.warn('⚠️  WARNING: Memory usage high!');
+  }
+}, 30000);
+
+export default server;

@@ -2,13 +2,20 @@ services:
   - type: web
     name: cryptopulse-frontend
     env: node
+    region: oregon
+    plan: starter
     autoDeploy: true
     rootDir: Cryptopulse--main/frontend
     buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm build
     startCommand: node server.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=460"
       - key: VITE_API_BASE_URL
         value: https://cryptopulse-backend-j4ne.onrender.com
       - key: VITE_APP_NAME
@@ -26,6 +33,4 @@ services:
         value: "30000"
       - key: VITE_API_RETRY_ATTEMPTS
         value: "3"
-    healthCheckPath: /health
-    plan: starter
 
