@@ -33,40 +33,9 @@ const reportError = (error: Error, errorInfo?: any) => {
     }
   }
 };
-// Simple test component to ensure something renders
-const TestComponent = () => {
-  console.log('🧪 TestComponent rendering...');
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-4">CryptoPulse</h1>
-        <p className="text-xl text-slate-300 mb-6">AI-Powered Trading Bot</p>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto"></div>
-        <p className="text-slate-400 mt-4">Loading app...</p>
-      </div>
-    </div>
-  );
-};
-
 // Main App Component - Simplified
 const AppContent = React.memo(() => {
   console.log('🎯 AppContent rendering...');
-  
-  // Show test component for 2 seconds, then show router
-  const [showTest, setShowTest] = React.useState(true);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('🔄 Switching to router...');
-      setShowTest(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (showTest) {
-    return <TestComponent />;
-  }
-  
   return <AppRouter />;
 });
 AppContent.displayName = 'AppContent';
