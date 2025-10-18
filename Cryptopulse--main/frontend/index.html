@@ -166,20 +166,22 @@
     </style>
   </head>
   <body>
-    <!-- Loading Screen -->
-    <div class="app-loading">
-      <div class="app-loading-content">
-        <div class="app-loading-logo">🚀</div>
-        <div class="app-loading-title">CryptoPulse</div>
-        <div class="app-loading-subtitle">AI-Powered Trading Bot</div>
-        <div class="app-loading-spinner"></div>
-      </div>
-    </div>
+    <!-- Loading Screen - Removed to prevent loading issues -->
     
     <div id="root"></div>
     
     <!-- Vite will inject the script tags here -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Fallback redirect script -->
+    <script>
+      // Fallback: redirect to disclaimer if app doesn't load within 3 seconds
+      setTimeout(() => {
+        if (window.location.pathname === '/') {
+          window.location.href = '/disclaimer';
+        }
+      }, 3000);
+    </script>
     
     <!-- Service Worker Registration (versioned) + Loader failsafe -->
     <script>

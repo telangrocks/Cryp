@@ -147,14 +147,25 @@ const PlaceholderComponent = ({ title, description }: { title: string; descripti
 );
 
 // Loading fallback component
-const LoadingFallback: React.FC = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-    <div className="text-center">
-      <div className="w-16 h-16 mx-auto mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-white text-lg">Loading...</p>
+const LoadingFallback: React.FC = () => {
+  // Auto-redirect after 2 seconds to prevent infinite loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      window.location.href = '/disclaimer';
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-white text-lg">Loading...</p>
+        <p className="text-slate-400 text-sm mt-2">Redirecting in 2 seconds...</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Error fallback component for routes
 const RouteErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => (
