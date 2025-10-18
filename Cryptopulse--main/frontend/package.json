@@ -46,7 +46,6 @@
     "analyze": "pnpm build && npx vite-bundle-analyzer dist/stats.html",
     "deploy:northflank": "bash ../scripts/deploy-northflank.sh frontend",
     "deploy:all": "bash ../scripts/deploy-northflank.sh",
-    "prepare": "husky install || true"
   },
   "devDependencies": {
     "@axe-core/cli": "4.10.0",
@@ -84,6 +83,7 @@
     "typescript": "5.7.2",
     "vite": "^5.4.10",
     "vite-bundle-analyzer": "0.18.0",
+    "vite-plugin-pwa": "^0.21.1",
     "vitest": "2.1.9"
   },
   "dependencies": {
