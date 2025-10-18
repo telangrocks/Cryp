@@ -1,82 +1,65 @@
 import React from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 
-// Components
-import { Toaster } from './components/ui/toaster';
-// Utils
-import AppRouter from './router';
-
-// Simplified error reporting
-const reportError = (error: Error, errorInfo?: any) => {
-  if (__PROD__) {
-    console.error('Production error:', error, errorInfo);
-    // Simple error reporting without complex dependencies
-    try {
-      const errorData = {
-        error: { message: error.message, stack: error.stack, name: error.name },
-        errorInfo,
-        timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-      };
-      // Only report if error URL is configured
-      const errorUrl = import.meta.env.VITE_ERROR_URL;
-      if (errorUrl) {
-        fetch(errorUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(errorData),
-        }).catch(() => {});
-      }
-    } catch (e) {
-      // Silent fail for error reporting
-    }
-  }
-};
-// Main App Component - Simplified
-const AppContent = React.memo(() => {
-  console.log('🎯 AppContent rendering...');
-  return <AppRouter />;
-});
-AppContent.displayName = 'AppContent';
-// Main App Component with Providers - Simplified
-const App = React.memo(() => {
-  console.log('🎨 App component rendering...');
+// Ultra-minimal app to test basic React rendering
+const App = () => {
+  console.log('🚀 Ultra-minimal App rendering...');
+  
   return (
-    <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-          <div className="text-center max-w-md mx-auto p-6">
-            <h1 className="text-3xl font-bold text-red-500 mb-4">Application Error</h1>
-            <p className="text-gray-300 mb-6">Something went wrong. Please try refreshing the page.</p>
-            <button
-              onClick={resetErrorBoundary}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600'
-              }}
-            >
-              🔄 Refresh Page
-            </button>
-          </div>
-        </div>
-      )}
-      onError={(error, errorInfo) => {
-        reportError(error, errorInfo);
-      }}
-    >
-      <AppContent />
-      <Toaster />
-    </ErrorBoundary>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{
+        textAlign: 'center',
+        color: 'white',
+        padding: '20px'
+      }}>
+        <h1 style={{
+          fontSize: '3rem',
+          fontWeight: 'bold',
+          marginBottom: '1rem',
+          background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          CryptoPulse
+        </h1>
+        <p style={{
+          fontSize: '1.5rem',
+          marginBottom: '2rem',
+          opacity: 0.9
+        }}>
+          AI-Powered Trading Bot
+        </p>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          border: '4px solid rgba(255, 255, 255, 0.3)',
+          borderTopColor: 'white',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto'
+        }}></div>
+        <p style={{
+          marginTop: '1rem',
+          opacity: 0.8
+        }}>
+          Loading...
+        </p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    </div>
   );
-});
-App.displayName = 'App';
+};
+
 export default App;
 
 

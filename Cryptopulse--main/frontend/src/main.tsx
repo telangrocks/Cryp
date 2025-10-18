@@ -1,16 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
-import ErrorBoundary from './components/ErrorBoundary';
-import { setupErrorLogging } from './utils/errorLogger';
-import { registerServiceWorker } from './utils/serviceWorkerRegistration';
-import './index.css';
 
-// Initialize error logging BEFORE anything else
-setupErrorLogging();
+console.log('🚀 Starting ultra-minimal CryptoPulse app...');
 
-// Get root element with validation
+// Get root element
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
@@ -24,10 +18,29 @@ if (!rootElement) {
       height: 100vh;
       padding: 20px;
       font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     ">
-      <h1 style="color: #e53e3e; margin-bottom: 16px;">
-        Application Error: Root element not found
+      <h1 style="color: #ff6b6b; margin-bottom: 16px; font-size: 2rem;">
+        CryptoPulse
       </h1>
+      <p style="color: #ccc; margin-bottom: 24px;">
+        Root element not found - this is a critical error
+      </p>
+      <button
+        onclick="window.location.reload()"
+        style="
+          padding: 12px 24px;
+          background-color: #4ecdc4;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 16px;
+        "
+      >
+        Reload Page
+      </button>
     </div>
   `;
   throw new Error('Root element not found');
@@ -35,28 +48,20 @@ if (!rootElement) {
 
 // Create root and render app
 try {
-  console.log('🚀 Starting CryptoPulse app initialization...');
+  console.log('📱 Creating React root...');
   const root = ReactDOM.createRoot(rootElement);
   
-  console.log('📱 Rendering React app...');
+  console.log('🎨 Rendering App component...');
   root.render(
     <React.StrictMode>
-      <HelmetProvider>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-      </HelmetProvider>
+      <App />
     </React.StrictMode>
   );
 
-  console.log('✅ App rendered successfully!');
-  console.log('🔧 Registering service worker...');
-
-  // Register service worker after render
-  registerServiceWorker();
+  console.log('✅ Ultra-minimal app rendered successfully!');
   
 } catch (error) {
-  console.error('❌ Fatal error during application initialization:', error);
+  console.error('❌ Fatal error during app initialization:', error);
   
   // Emergency fallback UI
   rootElement.innerHTML = `
@@ -68,18 +73,20 @@ try {
       height: 100vh;
       padding: 20px;
       font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     ">
-      <h1 style="color: #e53e3e; margin-bottom: 16px;">
-        Application Failed to Start
+      <h1 style="color: #ff6b6b; margin-bottom: 16px; font-size: 2rem;">
+        CryptoPulse
       </h1>
-      <p style="color: #666; margin-bottom: 24px;">
-        ${error instanceof Error ? error.message : 'Unknown error'}
+      <p style="color: #ccc; margin-bottom: 24px;">
+        Application Failed to Start: ${error instanceof Error ? error.message : 'Unknown error'}
       </p>
       <button
         onclick="window.location.reload()"
         style="
           padding: 12px 24px;
-          background-color: #3b82f6;
+          background-color: #4ecdc4;
           color: white;
           border: none;
           border-radius: 6px;
