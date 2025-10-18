@@ -33,7 +33,7 @@ export default function AuthScreen() {
   const [attemptCount, setAttemptCount] = useState(0);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
-  const { login, register, requestPasswordReset, resetPassword } = useAuth();
+  const { login, register, requestPasswordReset, resetPassword, checkDisclaimerStatus } = useAuth();
   const navigate = useNavigate();
 
   // Rate limiting: 5 attempts per 15 minutes
@@ -218,7 +218,14 @@ export default function AuthScreen() {
         await login(emailValidation.sanitizedValue, passwordValidation.sanitizedValue, csrfToken);
         // Reset attempt count on successful login
         localStorage.setItem('authAttemptCount', '0');
-        navigate('/dashboard'); // Changed from '/disclaimer' to '/dashboard'
+        
+        // Check if disclaimer has been accepted
+        const disclaimerAccepted = await checkDisclaimerStatus();
+        if (disclaimerAccepted) {
+          navigate('/dashboard');
+        } else {
+          navigate('/disclaimer');
+        }
       } else {
         await register(
           emailValidation.sanitizedValue,
@@ -229,7 +236,14 @@ export default function AuthScreen() {
         setSuccessMessage('Account created successfully! Please check your email to verify your account.');
         // Reset attempt count on successful registration
         localStorage.setItem('authAttemptCount', '0');
-        navigate('/dashboard'); // Changed from '/disclaimer' to '/dashboard'
+        
+        // Check if disclaimer has been accepted
+        const disclaimerAccepted = await checkDisclaimerStatus();
+        if (disclaimerAccepted) {
+          navigate('/dashboard');
+        } else {
+          navigate('/disclaimer');
+        }
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An error occurred');

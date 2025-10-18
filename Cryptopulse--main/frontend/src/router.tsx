@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -108,6 +109,43 @@ const DisclaimerScreen = lazy(() => import('./components/DisclaimerScreen').catc
   ) };
 }));
 
+// Additional components for missing routes
+const APIKeySetup = lazy(() => import('./components/APIKeySetup').catch(err => {
+  console.error('Failed to load APIKeySetup:', err);
+  return { default: () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error loading API Key Setup</h1>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>
+  ) };
+}));
+
+// Placeholder components for missing routes
+const PlaceholderComponent = ({ title, description }: { title: string; description: string }) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+    <div className="text-center max-w-md mx-auto p-6">
+      <div className="w-16 h-16 mx-auto mb-4 bg-purple-500/20 rounded-full flex items-center justify-center">
+        <TrendingUp className="w-8 h-8 text-purple-400" />
+      </div>
+      <h1 className="text-3xl font-bold text-white mb-4">{title}</h1>
+      <p className="text-slate-400 mb-6">{description}</p>
+      <button
+        onClick={() => window.history.back()}
+        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+      >
+        Go Back
+      </button>
+    </div>
+  </div>
+);
+
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -196,9 +234,11 @@ const router = createBrowserRouter([
       <ThemeProvider>
         <AuthProvider>
           <RouteErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <Dashboard />
-            </Suspense>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <Dashboard />
+              </Suspense>
+            </ProtectedRoute>
           </RouteErrorBoundary>
         </AuthProvider>
       </ThemeProvider>
@@ -229,6 +269,192 @@ const router = createBrowserRouter([
             <Suspense fallback={<LoadingFallback />}>
               <Privacy />
             </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // API Keys Setup
+  {
+    path: '/api-keys',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <APIKeySetup />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Crypto Pairs Selection
+  {
+    path: '/crypto-pairs',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Crypto Pairs" 
+                  description="Select your preferred cryptocurrency trading pairs. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Bot Setup
+  {
+    path: '/bot-setup',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Bot Setup" 
+                  description="Configure your trading bot parameters and strategies. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Trade Execution
+  {
+    path: '/trade-execution',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Trade Execution" 
+                  description="Execute your trading strategies with AI-powered insights. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // AI Automation
+  {
+    path: '/ai-automation',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="AI Automation" 
+                  description="Set up intelligent trading automation powered by advanced AI algorithms. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Alerts Settings
+  {
+    path: '/alerts-settings',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Alerts Settings" 
+                  description="Configure trading alerts and notifications. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Backtesting
+  {
+    path: '/backtesting',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Backtesting" 
+                  description="Test your trading strategies against historical data. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Monitoring
+  {
+    path: '/monitoring',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Live Monitoring" 
+                  description="Monitor your trading bots and performance in real-time. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  // Performance Analytics
+  {
+    path: '/performance',
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <ProtectedRoute>
+              <Suspense fallback={<LoadingFallback />}>
+                <PlaceholderComponent 
+                  title="Performance Analytics" 
+                  description="Analyze your trading performance with detailed analytics and insights. This feature is coming soon!" 
+                />
+              </Suspense>
+            </ProtectedRoute>
           </RouteErrorBoundary>
         </AuthProvider>
       </ThemeProvider>

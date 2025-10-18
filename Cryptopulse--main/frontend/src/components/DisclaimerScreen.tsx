@@ -2,15 +2,24 @@ import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from './ui/alert';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export default function DisclaimerScreen() {
   const navigate = useNavigate();
+  const { acceptDisclaimer } = useAuth();
 
-  const handleAccept = () => {
-    navigate('/auth'); // Changed from '/' to '/auth'
+  const handleAccept = async () => {
+    try {
+      await acceptDisclaimer();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Failed to accept disclaimer:', error);
+      // Still navigate to dashboard even if disclaimer acceptance fails
+      navigate('/dashboard');
+    }
   };
 
   const handleDecline = () => {
