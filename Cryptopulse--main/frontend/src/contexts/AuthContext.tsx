@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fallback timeout to ensure loading is set to false
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 1000);
     return () => clearTimeout(timeout);
   }, []);
   const login = async (email: string, password: string) => {

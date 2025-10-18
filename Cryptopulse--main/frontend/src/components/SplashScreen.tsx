@@ -13,7 +13,7 @@ interface SplashScreenProps {
 }
 
 export default function SplashScreen({ 
-  duration = 4000, 
+  duration = 2000, 
   redirectTo = '/disclaimer' 
 }: SplashScreenProps = {}) {
   const [showFlash, setShowFlash] = useState(false);
@@ -31,70 +31,47 @@ export default function SplashScreen({
   ];
 
   useEffect(() => {
-    // Prevent navigation errors with safety checks
-    let timeoutId: NodeJS.Timeout;
-    let flashTimer: NodeJS.Timeout;
-    let progressInterval: NodeJS.Timeout;
-    let stepInterval: NodeJS.Timeout;
+    // Mark component as ready immediately
+    setIsReady(true);
 
-    try {
-      // Mark component as ready
-      setIsReady(true);
-
-      // Flash animation
-      flashTimer = setTimeout(() => {
-        setShowFlash(true);
-        setTimeout(() => setShowFlash(false), 300);
-      }, 1000);
-
-      // Progress animation
-      progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            setIsComplete(true);
-            return 100;
-          }
-          return prev + 1.5;
-        });
-      }, 30);
-
-      // Step animation
-      stepInterval = setInterval(() => {
-        setCurrentStep(prev => (prev + 1) % steps.length);
-      }, 800);
-
-      // Setup delayed navigation with error handling
-      timeoutId = setTimeout(() => {
-        try {
-          // Validate navigate function exists
-          if (typeof navigate === 'function') {
-            navigate(redirectTo, { replace: true });
-          } else {
-            console.error('[SplashScreen] Navigate function not available');
-            // Fallback to window location
-            window.location.href = redirectTo;
-          }
-        } catch (navError) {
-          console.error('[SplashScreen] Navigation error:', navError);
-          // Fallback navigation
-          window.location.href = redirectTo;
+    // Progress animation
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          setIsComplete(true);
+          return 100;
         }
-      }, duration);
-    } catch (error) {
-      console.error('[SplashScreen] Setup error:', error);
-      // Immediate fallback navigation
+        return prev + 2; // Faster progress
+      });
+    }, 40);
+
+    // Step animation
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => (prev + 1) % steps.length);
+    }, 1000);
+
+    // Flash animation
+    const flashTimer = setTimeout(() => {
+      setShowFlash(true);
+      setTimeout(() => setShowFlash(false), 300);
+    }, 500);
+
+    // Simple timeout for navigation - use window.location for reliability
+    const timeoutId = setTimeout(() => {
+      console.log('[SplashScreen] Redirecting to:', redirectTo);
+      // Use window.location for more reliable navigation
       window.location.href = redirectTo;
-    }
+    }, duration);
 
     // Cleanup function
     return () => {
-      if (flashTimer) clearTimeout(flashTimer);
-      if (timeoutId) clearTimeout(timeoutId);
-      if (progressInterval) clearInterval(progressInterval);
-      if (stepInterval) clearInterval(stepInterval);
+      clearTimeout(timeoutId);
+      clearTimeout(flashTimer);
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
     };
-  }, [navigate, redirectTo, duration, steps.length]);
+  }, [redirectTo, duration, steps.length]);
 
   // Safe render with error boundary
   if (!isReady) {
