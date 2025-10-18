@@ -3,11 +3,17 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -35,7 +41,10 @@
     "@radix-ui/react-progress": "^1.0.3",
     "@radix-ui/react-checkbox": "^1.0.4",
     "dompurify": "^3.0.5",
-    "zustand": "^4.4.7"
+    "zustand": "^4.4.7",
+    "express": "4.18.2",
+    "compression": "1.7.4",
+    "helmet": "7.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
