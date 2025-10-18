@@ -218,7 +218,7 @@ export default function AuthScreen() {
         await login(emailValidation.sanitizedValue, passwordValidation.sanitizedValue, csrfToken);
         // Reset attempt count on successful login
         localStorage.setItem('authAttemptCount', '0');
-        navigate('/disclaimer');
+        navigate('/dashboard'); // Changed from '/disclaimer' to '/dashboard'
       } else {
         await register(
           emailValidation.sanitizedValue,
@@ -229,7 +229,7 @@ export default function AuthScreen() {
         setSuccessMessage('Account created successfully! Please check your email to verify your account.');
         // Reset attempt count on successful registration
         localStorage.setItem('authAttemptCount', '0');
-        navigate('/disclaimer');
+        navigate('/dashboard'); // Changed from '/disclaimer' to '/dashboard'
       }
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('An error occurred');

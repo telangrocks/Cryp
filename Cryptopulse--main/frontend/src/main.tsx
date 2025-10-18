@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
-import AppRouter from './router';
+import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 import { setupErrorLogging } from './utils/errorLogger';
 import { registerServiceWorker } from './utils/serviceWorkerRegistration';
@@ -41,7 +41,7 @@ try {
     <React.StrictMode>
       <HelmetProvider>
         <ErrorBoundary>
-          <AppRouter />
+          <App />
         </ErrorBoundary>
       </HelmetProvider>
     </React.StrictMode>

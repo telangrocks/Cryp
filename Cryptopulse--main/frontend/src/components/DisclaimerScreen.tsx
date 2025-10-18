@@ -10,7 +10,7 @@ export default function DisclaimerScreen() {
   const navigate = useNavigate();
 
   const handleAccept = () => {
-    navigate('/');
+    navigate('/auth'); // Changed from '/' to '/auth'
   };
 
   const handleDecline = () => {

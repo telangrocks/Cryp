@@ -10,7 +10,7 @@ import { Toaster } from './components/ui/toaster';
 // Hooks
 import { useDocumentHead } from './hooks/useDocumentHead';
 // Utils
-import { AppRoutes } from './routes';
+import AppRouter from './router';
 
 // Simplified error reporting
 const reportError = (error: Error, errorInfo?: any) => {
@@ -41,38 +41,7 @@ const reportError = (error: Error, errorInfo?: any) => {
 };
 // Main App Component - Simplified
 const AppContent = React.memo(() => {
-  const { loading } = useAuth();
-  useDocumentHead({ title: 'CryptoPulse - AI Trading Platform' });
-  
-  // Remove HTML loading screen when auth loading completes
-  React.useEffect(() => {
-    if (!loading) {
-      document.body.classList.add('app-loaded');
-      const loadingEl = document.querySelector('.app-loading');
-      if (loadingEl) {
-        loadingEl.remove();
-      }
-    }
-  }, [loading]);
-  
-  // Fallback timeout to ensure loading screen is removed
-  React.useEffect(() => {
-    const fallbackTimeout = setTimeout(() => {
-      document.body.classList.add('app-loaded');
-      const loadingEl = document.querySelector('.app-loading');
-      if (loadingEl) {
-        loadingEl.remove();
-      }
-    }, 5000);
-    
-    return () => clearTimeout(fallbackTimeout);
-  }, []);
-  
-  if (loading) {
-    return <SplashScreen />;
-  }
-  
-  return <AppRoutes />;
+  return <AppRouter />;
 });
 AppContent.displayName = 'AppContent';
 // Main App Component with Providers - Simplified
@@ -80,37 +49,26 @@ const App = React.memo(() => {
   return (
     <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
-        <div style={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white'
-        }}>
-          <h1>🚀 CryptoPulse</h1>
-          <h2 style={{ color: '#fbbf24', marginBottom: '1rem' }}>Something went wrong</h2>
-          <p style={{ marginBottom: '2rem', opacity: 0.9 }}>
-            We're working to fix this issue. Please try refreshing the page.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500'
-            }}
-          >
-            🔄 Refresh Page
-          </button>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+          <div className="text-center max-w-md mx-auto p-6">
+            <h1 className="text-3xl font-bold text-red-500 mb-4">Application Error</h1>
+            <p className="text-gray-300 mb-6">Something went wrong. Please try refreshing the page.</p>
+            <button
+              onClick={resetErrorBoundary}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600'
+              }}
+            >
+              🔄 Refresh Page
+            </button>
+          </div>
         </div>
       )}
       onError={(error, errorInfo) => {

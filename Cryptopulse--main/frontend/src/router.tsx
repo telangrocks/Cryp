@@ -89,6 +89,23 @@ const Privacy = lazy(() => import('./pages/Privacy').catch(err => {
   ) };
 }));
 
+const DisclaimerScreen = lazy(() => import('./components/DisclaimerScreen').catch(err => {
+  console.error('Failed to load DisclaimerScreen:', err);
+  return { default: () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error loading Disclaimer</h1>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>
+  ) };
+}));
+
 // Loading fallback component
 const LoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -136,11 +153,22 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
-    path: '/home',
+    path: '/disclaimer',
     element: (
       <RouteErrorBoundary>
         <Suspense fallback={<LoadingFallback />}>
-          <Home />
+          <DisclaimerScreen />
+        </Suspense>
+      </RouteErrorBoundary>
+    ),
+    errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
+  },
+  {
+    path: '/auth',
+    element: (
+      <RouteErrorBoundary>
+        <Suspense fallback={<LoadingFallback />}>
+          <AuthScreen />
         </Suspense>
       </RouteErrorBoundary>
     ),
@@ -158,11 +186,11 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
-    path: '/auth',
+    path: '/home',
     element: (
       <RouteErrorBoundary>
         <Suspense fallback={<LoadingFallback />}>
-          <AuthScreen />
+          <Home />
         </Suspense>
       </RouteErrorBoundary>
     ),
