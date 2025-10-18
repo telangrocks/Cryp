@@ -492,6 +492,7 @@ const router = createBrowserRouter([
 
 // Export router component
 const AppRouter: React.FC = () => {
+  console.log('🛣️ AppRouter rendering...');
   try {
     return <RouterProvider router={router} />;
   } catch (error) {

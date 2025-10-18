@@ -35,8 +35,10 @@ if (!rootElement) {
 
 // Create root and render app
 try {
+  console.log('🚀 Starting CryptoPulse app initialization...');
   const root = ReactDOM.createRoot(rootElement);
   
+  console.log('📱 Rendering React app...');
   root.render(
     <React.StrictMode>
       <HelmetProvider>
@@ -47,7 +49,8 @@ try {
     </React.StrictMode>
   );
 
-  
+  console.log('✅ App rendered successfully!');
+  console.log('🔧 Registering service worker...');
 
   // Register service worker after render
   registerServiceWorker();
