@@ -192,7 +192,11 @@ const router = createBrowserRouter([
     element: (
       <ThemeProvider>
         <AuthProvider>
-          <SplashScreen />
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <DisclaimerScreen />
+            </Suspense>
+          </RouteErrorBoundary>
         </AuthProvider>
       </ThemeProvider>
     ),
