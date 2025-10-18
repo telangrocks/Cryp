@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Lazy load components for better performance with error handling
 const Home = lazy(() => import('./components/WorldClassDashboard').catch(err => {
@@ -149,61 +151,87 @@ const RouteErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <SplashScreen />,
+    element: (
+      <ThemeProvider>
+        <AuthProvider>
+          <SplashScreen />
+        </AuthProvider>
+      </ThemeProvider>
+    ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
     path: '/disclaimer',
     element: (
-      <RouteErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <DisclaimerScreen />
-        </Suspense>
-      </RouteErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <DisclaimerScreen />
+            </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
     path: '/auth',
     element: (
-      <RouteErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <AuthScreen />
-        </Suspense>
-      </RouteErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AuthScreen />
+            </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
     path: '/dashboard',
     element: (
-      <RouteErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <Dashboard />
-        </Suspense>
-      </RouteErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Dashboard />
+            </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
     path: '/home',
     element: (
-      <RouteErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <Home />
-        </Suspense>
-      </RouteErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Home />
+            </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },
   {
     path: '/privacy',
     element: (
-      <RouteErrorBoundary>
-        <Suspense fallback={<LoadingFallback />}>
-          <Privacy />
-        </Suspense>
-      </RouteErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <RouteErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Privacy />
+            </Suspense>
+          </RouteErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     errorElement: <RouteErrorBoundary><NotFound /></RouteErrorBoundary>,
   },

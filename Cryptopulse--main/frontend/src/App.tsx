@@ -1,14 +1,8 @@
 import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
-// Context providers
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
 // Components
-import SplashScreen from './components/SplashScreen';
 import { Toaster } from './components/ui/toaster';
-// Hooks
-import { useDocumentHead } from './hooks/useDocumentHead';
 // Utils
 import AppRouter from './router';
 
@@ -75,12 +69,8 @@ const App = React.memo(() => {
         reportError(error, errorInfo);
       }}
     >
-      <ThemeProvider>
-        <AuthProvider>
-          <AppContent />
-          <Toaster />
-        </AuthProvider>
-      </ThemeProvider>
+      <AppContent />
+      <Toaster />
     </ErrorBoundary>
   );
 });
