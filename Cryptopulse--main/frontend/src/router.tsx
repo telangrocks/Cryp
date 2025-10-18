@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { TrendingUp } from 'lucide-react';
 import ErrorBoundary from './components/ErrorBoundary';
 import SplashScreen from './components/SplashScreen';
 import ProtectedRoute from './components/ProtectedRoute';

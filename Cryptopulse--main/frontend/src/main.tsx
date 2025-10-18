@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-console.log('🚀 Starting ultra-minimal CryptoPulse app...');
+console.log('🚀 Starting CryptoPulse app...');
 
 // Get root element
 const rootElement = document.getElementById('root');
@@ -58,7 +58,7 @@ try {
     </React.StrictMode>
   );
 
-  console.log('✅ Ultra-minimal app rendered successfully!');
+  console.log('✅ CryptoPulse app rendered successfully!');
   
 } catch (error) {
   console.error('❌ Fatal error during app initialization:', error);

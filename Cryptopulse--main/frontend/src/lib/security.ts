@@ -327,7 +327,10 @@ export const securityMonitor = {
   },
 
   logSecurityEvent: (event: string, details: Record<string, any>): void => {
-    .toISOString(),
+    console.log('Security Event:', {
+      event,
+      details,
+      timestamp: new Date().toISOString(),
     });
   },
 };
