@@ -130,7 +130,7 @@ try {
     api: {
       baseUrl: (() => {
         const url = import.meta.env.VITE_API_BASE_URL ||
-          (import.meta.env.MODE === 'production' ? 'https://cryptopulse-backend-j4ne.onrender.com' : 'http://localhost:1337');
+          (import.meta.env.MODE === 'production' ? import.meta.env.VITE_PRODUCTION_API_URL : 'http://localhost:1337');
         // Simplified validation - just check if it's a string
         if (!url || typeof url !== 'string') {
           throw new Error('API Base URL is required');
@@ -185,9 +185,9 @@ try {
       enableNotifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
     },
     external: {
-      coingeckoApiUrl: import.meta.env.VITE_COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',
+      coingeckoApiUrl: import.meta.env.VITE_COINGECKO_API_URL || import.meta.env.VITE_DEFAULT_COINGECKO_URL,
       coingeckoApiKey: import.meta.env.VITE_COINGECKO_API_KEY || '',
-      newsApiUrl: import.meta.env.VITE_NEWS_API_URL || 'https://newsapi.org/v2',
+      newsApiUrl: import.meta.env.VITE_NEWS_API_URL || import.meta.env.VITE_DEFAULT_NEWS_URL,
       newsApiKey: import.meta.env.VITE_NEWS_API_KEY || '',
     },
     ui: {
@@ -264,9 +264,9 @@ try {
       enableNotifications: true,
     },
     external: {
-      coingeckoApiUrl: 'https://api.coingecko.com/api/v3',
+      coingeckoApiUrl: process.env.VITE_DEFAULT_COINGECKO_URL || 'https://api.coingecko.com/api/v3',
       coingeckoApiKey: '',
-      newsApiUrl: 'https://newsapi.org/v2',
+      newsApiUrl: process.env.VITE_DEFAULT_NEWS_URL || 'https://newsapi.org/v2',
       newsApiKey: '',
     },
     ui: {

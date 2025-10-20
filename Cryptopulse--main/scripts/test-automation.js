@@ -360,10 +360,10 @@ const waitForServices = async () => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       // Check backend health
-      await executeCommand('curl -f http://localhost:1337/health');
+      await executeCommand(`curl -f ${process.env.DEV_BACKEND_URL || 'http://localhost:1337'}/health`);
       
       // Check frontend health
-      await executeCommand('curl -f http://localhost:3000');
+      await executeCommand(`curl -f ${process.env.DEV_FRONTEND_URL || 'http://localhost:3000'}`);
       
       logSuccess('Services are ready');
       return;

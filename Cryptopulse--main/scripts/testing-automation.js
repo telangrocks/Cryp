@@ -26,25 +26,25 @@ const colors = {
 const TESTING_CONFIG = {
   environments: {
     development: {
-      baseUrl: 'http://localhost:3000',
-      apiUrl: 'http://localhost:1337',
-      cloudUrl: 'http://localhost:3001',
-      database: 'cryptopulse_dev',
-      timeout: 30000
+      baseUrl: process.env.DEV_FRONTEND_URL || 'http://localhost:3000',
+      apiUrl: process.env.DEV_BACKEND_URL || 'http://localhost:1337',
+      cloudUrl: process.env.DEV_CLOUD_URL || 'http://localhost:3001',
+      database: process.env.DEV_DATABASE_NAME || 'cryptopulse_dev',
+      timeout: parseInt(process.env.DEV_TIMEOUT || '30000')
     },
     staging: {
-      baseUrl: 'https://staging.cryptopulse.com',
-      apiUrl: 'https://api-staging.cryptopulse.com',
-      cloudUrl: 'https://cloud-staging.cryptopulse.com',
-      database: 'cryptopulse_staging',
-      timeout: 60000
+      baseUrl: process.env.STAGING_FRONTEND_URL || 'https://staging.cryptopulse.com',
+      apiUrl: process.env.STAGING_BACKEND_URL || 'https://api-staging.cryptopulse.com',
+      cloudUrl: process.env.STAGING_CLOUD_URL || 'https://cloud-staging.cryptopulse.com',
+      database: process.env.STAGING_DATABASE_NAME || 'cryptopulse_staging',
+      timeout: parseInt(process.env.STAGING_TIMEOUT || '60000')
     },
     production: {
-      baseUrl: 'https://app.cryptopulse.com',
-      apiUrl: 'https://api.cryptopulse.com',
-      cloudUrl: 'https://cloud.cryptopulse.com',
-      database: 'cryptopulse_prod',
-      timeout: 90000
+      baseUrl: process.env.PROD_FRONTEND_URL || 'https://app.cryptopulse.com',
+      apiUrl: process.env.PROD_BACKEND_URL || 'https://api.cryptopulse.com',
+      cloudUrl: process.env.PROD_CLOUD_URL || 'https://cloud.cryptopulse.com',
+      database: process.env.PROD_DATABASE_NAME || 'cryptopulse_prod',
+      timeout: parseInt(process.env.PROD_TIMEOUT || '90000')
     }
   },
   testSuites: {

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "cryptopulse-backend": "file:../.."
+  }
+}
