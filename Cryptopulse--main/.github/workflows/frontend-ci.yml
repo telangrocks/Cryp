@@ -1,0 +1,52 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'Cryptopulse--main/frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    paths:
+      - 'Cryptopulse--main/frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Cryptopulse--main/frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://example.com' }}
+          VITE_APP_NAME: CryptoPulse
+          VITE_APP_VERSION: 2.0.0
+        run: pnpm run build
+
+  # This job simply ensures CI passes without triggering Vercel deployments.
+  # Vercel will handle deployments via its own GitHub integration.
+
+
