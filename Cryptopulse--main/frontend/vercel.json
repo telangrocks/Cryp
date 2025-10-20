@@ -1,7 +1,8 @@
 {
   "version": 2,
   "name": "cryptopulse-frontend",
-  "buildCommand": "pnpm install && pnpm run build:production",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm run build:production",
   "outputDirectory": "dist",
   "framework": "vite",
   "cleanUrls": true,
