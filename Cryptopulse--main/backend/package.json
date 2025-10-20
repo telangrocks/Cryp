@@ -1,0 +1,20 @@
+{
+  "name": "cryptopulse-backend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "CryptoPulse Trading Bot Backend",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "build": "echo 'No build step required'",
+    "build:production": "echo 'No build step required'",
+    "test": "echo 'No tests specified'",
+    "lint": "echo 'No linting configured'"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {}
+}
+
