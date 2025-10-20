@@ -29,10 +29,8 @@
       ]
     }
   ],
-  "routes": [
-    { "src": "/sw.js", "dest": "/sw.js" },
-    { "src": "/workbox-.*\.js", "dest": "/workbox-8955e8d2.js" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 
