@@ -93,20 +93,26 @@ Total Size: 209.57 KB (0.2 MB)
 
 ### 3. Environment Variables
 
-#### Required Variables:
+#### ⚠️ CRITICAL - Required Variable (App won't start without this):
 ```bash
-VITE_API_BASE_URL=https://your-backend-api.com
-VITE_APP_NAME=CryptoPulse
-VITE_APP_VERSION=2.0.0
+VITE_API_URL=https://your-backend-api.com
+# Alternative: VITE_API_ENDPOINT (if VITE_API_URL not set)
 ```
 
-#### Optional Variables (with defaults):
+#### Recommended Variables:
 ```bash
+VITE_APP_NAME=CryptoPulse
+VITE_ENABLE_ANALYTICS=false
+VITE_ENABLE_ERROR_TRACKING=true
+```
+
+#### Optional Variables (if your app uses them):
+```bash
+VITE_APP_VERSION=2.0.0
 VITE_ENCRYPTION_KEY=<32+ char random string>
 VITE_BUILD_TARGET=production
 VITE_ENABLE_SOURCEMAPS=false
 VITE_DEBUG_MODE=false
-VITE_ENABLE_ANALYTICS=false
 VITE_ENABLE_WEBSOCKET=true
 VITE_API_TIMEOUT=30000
 VITE_API_MAX_RETRIES=3

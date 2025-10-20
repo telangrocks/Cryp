@@ -12,13 +12,15 @@
 
 ### Required Environment Variables
 Set in Vercel Project Settings > Environment Variables (Production/Preview):
-- `VITE_API_BASE_URL` (e.g., your backend base URL)
-- `VITE_APP_NAME` (e.g., CryptoPulse)
-- `VITE_APP_VERSION` (e.g., 2.0.0)
-- Optional feature flags:
-  - `VITE_ENABLE_ANALYTICS` (true/false)
-  - `VITE_ENABLE_SERVICE_WORKER` (true/false)
-  - `VITE_DEBUG_MODE` (true/false)
+
+**CRITICAL - App won't start without this:**
+- `VITE_API_URL` - Your backend API URL (e.g., https://your-backend.onrender.com)
+  - Alternative: `VITE_API_ENDPOINT` (if VITE_API_URL not set)
+
+**Recommended:**
+- `VITE_APP_NAME` - App name (default: CryptoPulse)
+- `VITE_ENABLE_ANALYTICS` - Enable analytics (true/false, default: false)
+- `VITE_ENABLE_ERROR_TRACKING` - Enable error tracking (true/false, default: true)
 
 ### Caching & Headers
 - Long-term caching headers are defined for JS/CSS/fonts; images have 7-day cache.
