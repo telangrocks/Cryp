@@ -7,7 +7,7 @@ services:
     autoDeploy: true
     rootDir: Cryptopulse--main/frontend
     buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm build
-    startCommand: node server.js
+    startCommand: pnpm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
