@@ -1,7 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import SEO from '../components/SEO';
+import { Dialog, DialogPortal, DialogOverlay, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogButton, DialogClose } from '../components/Dialog';
 
 const Privacy: React.FC = () => {
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  useEffect(() => {
+    try {
+      const accepted = localStorage.getItem('cp_disclaimer_accepted');
+      if (!accepted) setShowDisclaimer(true);
+    } catch {}
+  }, []);
+
+  const handleAccept = () => {
+    try { localStorage.setItem('cp_disclaimer_accepted', '1'); } catch {}
+    setShowDisclaimer(false);
+  };
+
+  const handleDecline = () => {
+    setShowDisclaimer(false);
+    // Optionally, navigate or show limited functionality; preserving current logic by just closing.
+  };
+
   return (
     <>
       <SEO title="Privacy Policy | CryptoPulse" />
@@ -24,6 +44,24 @@ const Privacy: React.FC = () => {
         <h2>5. Contact Us</h2>
         <p>If you have questions about this Privacy Policy, contact us at: privacy@cryptopulse.com</p>
       </div>
+
+      <Dialog open={showDisclaimer} onOpenChange={(v) => (!v ? setShowDisclaimer(false) : undefined)}>
+        <DialogPortal>
+          <DialogOverlay onDismiss={() => setShowDisclaimer(false)} />
+          <DialogContent ariaLabel="Disclaimer">
+            <DialogHeader>
+              <DialogTitle>Disclaimer</DialogTitle>
+              <DialogDescription>
+                CryptoPulse provides market data and insights for informational purposes only and does not constitute financial advice. Trading involves risk. By proceeding, you acknowledge and accept these terms.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose onClick={handleDecline}>Decline</DialogClose>
+              <DialogButton onClick={handleAccept}>Accept</DialogButton>
+            </DialogFooter>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
     </>
   );
 };

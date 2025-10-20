@@ -1,0 +1,61 @@
+/* Mobile First Responsive Utilities */
+
+/* Extra small devices (phones, less than 640px) */
+@media (max-width: 639px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Small devices (tablets, 640px and up) */
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+/* Medium devices (desktops, 768px and up) */
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+  
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+/* Large devices (large desktops, 1024px and up) */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+  
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Extra large devices (1280px and up) */
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* Utility classes */
+.responsive-text {
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+}
+
+.responsive-heading {
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+}
+
+.responsive-padding {
+  padding: clamp(1rem, 3vw, 2rem);
+}
