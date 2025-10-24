@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -61,14 +60,10 @@ export default defineConfig({
         ]
       }
     }),
-    // Bundle analyzer (only in analyze mode)
-    process.env.ANALYZE && visualizer({
-      open: true,
-      filename: 'dist/stats.html',
-      gzipSize: true,
-      brotliSize: true,
-    }),
-  ].filter(Boolean),
+    // Bundle analyzer removed - optional dev tool
+    // To analyze bundle: npm install -D rollup-plugin-visualizer
+    // Then set ANALYZE=true environment variable
+  ],
   
   build: {
     outDir: 'dist',
