@@ -157,12 +157,16 @@ validate_command() {
 validate_environment() {
     log_section "Phase 1: Environment Validation"
     
-    # Check required commands
-    local required_commands=("node" "npm" "git" "curl" "find" "du")
+    # Check required commands (FIXED: Added pnpm)
+    local required_commands=("node" "pnpm" "git" "curl" "find" "du")
     for cmd in "${required_commands[@]}"; do
         if validate_command "${cmd}"; then
             log_success "${cmd} found"
         else
+            if [[ "${cmd}" == "pnpm" ]]; then
+                log_error "pnpm is required but not found"
+                log_info "Install with: npm install -g pnpm"
+            fi
             exit 1
         fi
     done
@@ -178,11 +182,11 @@ validate_environment() {
     fi
     log_success "Node.js ${node_version} (meets requirement)"
     
-    # Validate npm
-    log_success "npm $(npm -v)"
+    # Validate pnpm
+    log_success "pnpm $(pnpm -v)"
     
-    # Check project structure
-    local required_files=("package.json" "package-lock.json")
+    # Check project structure (FIXED: Check for pnpm-lock.yaml)
+    local required_files=("package.json" "pnpm-lock.yaml")
     for file in "${required_files[@]}"; do
         if [[ ! -f "${PROJECT_ROOT}/${file}" ]]; then
             log_error "Required file missing: ${file}"
@@ -339,12 +343,13 @@ safe_cleanup() {
 install_dependencies() {
     log_section "Phase 5: Dependency Installation"
     
-    # Use npm ci for reproducible builds
-    log_info "Running npm ci (clean install)..."
-    if npm ci --loglevel=error; then
+    # FIXED: Use pnpm with frozen lockfile for reproducible builds
+    log_info "Running pnpm install (frozen lockfile)..."
+    if pnpm install --frozen-lockfile --prefer-offline 2>&1 | tee -a "${LOG_FILE}"; then
         log_success "Dependencies installed"
     else
         log_error "Failed to install dependencies"
+        log_info "Try: rm -rf node_modules .pnpm-store && pnpm install"
         exit 1
     fi
     
@@ -353,8 +358,8 @@ install_dependencies() {
     local extra_dev_deps=("rollup-plugin-visualizer")
     
     log_info "Installing additional dependencies..."
-    npm install --save --loglevel=error "${extra_deps[@]}" 2>&1 | tee -a "${LOG_FILE}"
-    npm install --save-dev --loglevel=error "${extra_dev_deps[@]}" 2>&1 | tee -a "${LOG_FILE}"
+    pnpm add "${extra_deps[@]}" 2>&1 | tee -a "${LOG_FILE}" || log_warning "Some deps may already be installed"
+    pnpm add -D "${extra_dev_deps[@]}" 2>&1 | tee -a "${LOG_FILE}" || log_warning "Some dev deps may already be installed"
     
     log_success "All dependencies ready"
 }
@@ -364,9 +369,9 @@ run_security_audit() {
     
     log_info "Scanning for vulnerabilities..."
     
-    # Run audit and capture output
+    # FIXED: Run pnpm audit and capture output
     local audit_json
-    if audit_json=$(npm audit --production --json 2>&1); then
+    if audit_json=$(pnpm audit --prod --json 2>&1); then
         log_success "No vulnerabilities found! ✨"
         return 0
     fi
@@ -388,14 +393,14 @@ run_security_audit() {
     log_raw ""
     
     # Show details
-    npm audit --production 2>&1 | head -30 | tee -a "${LOG_FILE}"
+    pnpm audit --prod 2>&1 | head -30 | tee -a "${LOG_FILE}"
     
     # Fail on critical or high vulnerabilities
     if [[ ${critical} -gt 0 ]] || [[ ${high} -gt 0 ]]; then
         log_raw ""
         log_error "CRITICAL or HIGH vulnerabilities found - deployment blocked!"
-        log_info "Fix vulnerabilities with: npm audit fix --production"
-        log_info "Or review: npm audit --production"
+        log_info "Fix vulnerabilities with: pnpm audit --fix"
+        log_info "Or review: pnpm audit --prod"
         exit 1
     fi
     
@@ -447,7 +452,8 @@ build_production() {
     export NODE_ENV=production
     
     log_info "Building application..."
-    if npm run build 2>&1 | tee -a "${LOG_FILE}"; then
+    # FIXED: Use pnpm run build
+    if pnpm run build 2>&1 | tee -a "${LOG_FILE}"; then
         log_success "Build completed"
     else
         log_error "Build failed"
@@ -512,8 +518,8 @@ test_preview_server() {
     
     log_info "Starting preview server on port ${PREVIEW_PORT}..."
     
-    # Start server in background
-    npm run preview > "${LOG_DIR}/preview-server.log" 2>&1 &
+    # Start server in background (FIXED: Use pnpm)
+    pnpm run preview > "${LOG_DIR}/preview-server.log" 2>&1 &
     PREVIEW_PID=$!
     
     log_info "Preview server PID: ${PREVIEW_PID}"

@@ -1,0 +1,71 @@
+# =============================================================================
+# CryptoPulse .tarignore
+# Excludes files from tar archives to prevent deployment issues
+# =============================================================================
+
+# CRITICAL: Never archive node_modules
+node_modules/
+**/node_modules/
+.pnpm-store/
+**/.pnpm-store/
+
+# Version control
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Build artifacts (should be rebuilt on target)
+dist/
+**/dist/
+build/
+**/build/
+.cache/
+**/.cache/
+
+# Environment files
+.env
+.env.*
+**/.env.local
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# IDEs
+.vscode/
+.idea/
+
+# Testing
+coverage/
+test-results/
+
+# Archives (don't nest archives)
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Backups
+.deployment-backups/
+backups/
+*.backup
+
+# Database files
+*.sqlite
+*.db
+data/
+

@@ -6,7 +6,18 @@ services:
     plan: starter
     autoDeploy: true
     rootDir: Cryptopulse--main/frontend
-    buildCommand: npm install -g pnpm@10.18.0 && pnpm install --no-frozen-lockfile && pnpm build
+    # FIXED: Proper pnpm installation and build process
+    # Uses frozen lockfile for reproducible builds
+    # Cleans node_modules before install to prevent symlink conflicts
+    buildCommand: |
+      echo "Installing pnpm..." &&
+      npm install -g pnpm@latest &&
+      echo "Cleaning previous installations..." &&
+      rm -rf node_modules .pnpm-store &&
+      echo "Installing dependencies with frozen lockfile..." &&
+      pnpm install --frozen-lockfile --prefer-offline &&
+      echo "Building production bundle..." &&
+      pnpm build
     startCommand: node server.cjs
     healthCheckPath: /health
     envVars:
@@ -15,7 +26,7 @@ services:
       - key: PORT
         value: 10000
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=460"
+        value: "--max-old-space-size=512"
       - key: VITE_API_BASE_URL
         value: https://cryptopulse-backend-j4ne.onrender.com
       - key: VITE_APP_NAME
@@ -26,11 +37,21 @@ services:
       - key: VITE_ENCRYPTION_KEY
         generateValue: true
         previewValue: "CHANGE_ME_TO_A_SECURE_RANDOM_32+_CHAR_STRING"
-      # Optional, recommended
+      # Build optimization
       - key: VITE_ENABLE_SOURCEMAPS
         value: "false"
+      - key: VITE_BUILD_TARGET
+        value: "production"
+      - key: VITE_MINIFY
+        value: "true"
+      # API configuration
       - key: VITE_API_TIMEOUT
         value: "30000"
       - key: VITE_API_RETRY_ATTEMPTS
         value: "3"
+      # Performance
+      - key: VITE_ENABLE_COMPRESSION
+        value: "true"
+      - key: VITE_CHUNK_SIZE_WARNING_LIMIT
+        value: "1000"
 

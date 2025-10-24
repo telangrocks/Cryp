@@ -1,0 +1,114 @@
+# =============================================================================
+# CryptoPulse .npmignore
+# Excludes files from npm package (if publishing)
+# =============================================================================
+
+# ================================
+# Development Files
+# ================================
+.vscode/
+.idea/
+*.sublime-*
+.editorconfig
+
+# ================================
+# Source Files (publish dist only)
+# ================================
+src/
+**/*.ts
+!**/*.d.ts
+tsconfig.json
+tsconfig.*.json
+
+# ================================
+# Testing
+# ================================
+test/
+tests/
+**/*.test.js
+**/*.spec.js
+**/*.test.ts
+**/*.spec.ts
+coverage/
+.nyc_output/
+jest.config.js
+playwright.config.ts
+
+# ================================
+# Build Tools
+# ================================
+webpack.config.js
+rollup.config.js
+vite.config.ts
+.babelrc
+.eslintrc*
+.prettierrc*
+.stylelintrc*
+
+# ================================
+# CI/CD
+# ================================
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+Jenkinsfile
+
+# ================================
+# Documentation
+# ================================
+docs/
+*.md
+!README.md
+!LICENSE.md
+
+# ================================
+# Deployment
+# ================================
+k8s/
+kubernetes/
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+render.yaml
+vercel.json
+netlify.toml
+
+# ================================
+# Scripts
+# ================================
+scripts/
+
+# ================================
+# Dependencies
+# ================================
+node_modules/
+.pnpm-store/
+
+# ================================
+# Environment
+# ================================
+.env*
+!.env.example
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+
+# ================================
+# OS Files
+# ================================
+.DS_Store
+Thumbs.db
+
+# ================================
+# Temporary
+# ================================
+*.tmp
+*.temp
+*.bak
+tmp/
+

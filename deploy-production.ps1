@@ -97,13 +97,16 @@ function Test-Command {
 function Test-Environment {
     Write-LogSection "Phase 1: Environment Validation"
     
-    # Check required commands
-    $RequiredCommands = @("node", "npm", "git")
+    # Check required commands (FIXED: Added pnpm)
+    $RequiredCommands = @("node", "pnpm", "git")
     foreach ($cmd in $RequiredCommands) {
         if (Test-Command $cmd) {
             Write-LogSuccess "$cmd found"
         } else {
             Write-LogError "$cmd is not installed or not in PATH"
+            if ($cmd -eq "pnpm") {
+                Write-LogInfo "Install with: npm install -g pnpm"
+            }
             exit 1
         }
     }
@@ -118,12 +121,12 @@ function Test-Environment {
     }
     Write-LogSuccess "Node.js $NodeVersion (meets requirement)"
     
-    # Validate npm
-    $NpmVersion = npm -v
-    Write-LogSuccess "npm $NpmVersion"
+    # Validate pnpm
+    $PnpmVersion = pnpm -v
+    Write-LogSuccess "pnpm $PnpmVersion"
     
-    # Check project structure
-    $RequiredFiles = @("package.json", "package-lock.json")
+    # Check project structure (FIXED: Check for pnpm-lock.yaml)
+    $RequiredFiles = @("package.json", "pnpm-lock.yaml")
     foreach ($file in $RequiredFiles) {
         if (!(Test-Path (Join-Path $ProjectRoot $file))) {
             Write-LogError "Required file missing: $file"
@@ -270,12 +273,14 @@ function Clear-SafeCleanup {
 function Install-Dependencies {
     Write-LogSection "Phase 5: Dependency Installation"
     
-    Write-LogInfo "Running npm ci (clean install)..."
+    # FIXED: Use pnpm with frozen lockfile for reproducible builds
+    Write-LogInfo "Running pnpm install (frozen lockfile)..."
     try {
-        npm ci --loglevel=error
+        pnpm install --frozen-lockfile --prefer-offline 2>&1 | Tee-Object -FilePath $LogFile -Append
         Write-LogSuccess "Dependencies installed"
     } catch {
         Write-LogError "Failed to install dependencies"
+        Write-LogInfo "Try: Remove-Item -Recurse -Force node_modules, .pnpm-store; pnpm install"
         exit 1
     }
     
@@ -285,11 +290,11 @@ function Install-Dependencies {
     
     Write-LogInfo "Installing additional dependencies..."
     try {
-        npm install --save --loglevel=error $ExtraDeps 2>&1 | Tee-Object -FilePath $LogFile -Append
-        npm install --save-dev --loglevel=error $ExtraDevDeps 2>&1 | Tee-Object -FilePath $LogFile -Append
+        pnpm add $ExtraDeps 2>&1 | Tee-Object -FilePath $LogFile -Append
+        pnpm add -D $ExtraDevDeps 2>&1 | Tee-Object -FilePath $LogFile -Append
         Write-LogSuccess "All dependencies ready"
     } catch {
-        Write-LogWarning "Some dependencies may have failed to install"
+        Write-LogWarning "Some dependencies may already be installed"
     }
 }
 
@@ -298,8 +303,9 @@ function Test-SecurityAudit {
     
     Write-LogInfo "Scanning for vulnerabilities..."
     
+    # FIXED: Use pnpm audit
     try {
-        $AuditResult = npm audit --production --json 2>&1
+        $AuditResult = pnpm audit --prod --json 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-LogSuccess "No vulnerabilities found! ✨"
             return
@@ -321,13 +327,13 @@ function Test-SecurityAudit {
         Write-Log ""
         
         # Show details
-        npm audit --production 2>&1 | Select-Object -First 30 | Tee-Object -FilePath $LogFile -Append
+        pnpm audit --prod 2>&1 | Select-Object -First 30 | Tee-Object -FilePath $LogFile -Append
         
         # Fail on critical or high vulnerabilities
         if ($Critical -gt 0 -or $High -gt 0) {
             Write-Log ""
             Write-LogError "CRITICAL or HIGH vulnerabilities found - deployment blocked!"
-            Write-LogInfo "Fix vulnerabilities with: npm audit fix --production"
+            Write-LogInfo "Fix vulnerabilities with: pnpm audit --fix"
             exit 1
         }
         
@@ -389,8 +395,9 @@ function Build-Production {
     $env:NODE_ENV = "production"
     
     Write-LogInfo "Building application..."
+    # FIXED: Use pnpm run build
     try {
-        npm run build 2>&1 | Tee-Object -FilePath $LogFile -Append
+        pnpm run build 2>&1 | Tee-Object -FilePath $LogFile -Append
         if ($LASTEXITCODE -eq 0) {
             Write-LogSuccess "Build completed"
         } else {
@@ -460,11 +467,11 @@ function Test-PreviewServer {
     
     Write-LogInfo "Starting preview server on port $PreviewPort..."
     
-    # Start server in background
+    # Start server in background (FIXED: Use pnpm)
     $PreviewJob = Start-Job -ScriptBlock { 
         param($Port, $LogFile)
         Set-Location $using:ProjectRoot
-        npm run preview 2>&1 | Tee-Object -FilePath $LogFile -Append
+        pnpm run preview 2>&1 | Tee-Object -FilePath $LogFile -Append
     } -ArgumentList $PreviewPort, (Join-Path $LogDir "preview-server.log")
     
     Write-LogInfo "Preview server job started: $($PreviewJob.Id)"

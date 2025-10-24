@@ -58,6 +58,19 @@ const BACKUP_CONFIG = {
     'docker-compose.production.yml',
     'monitoring',
     'scripts'
+  ],
+  // CRITICAL: Files/directories to NEVER backup
+  excludePatterns: [
+    'node_modules',
+    '.pnpm-store',
+    '.git',
+    '.cache',
+    'dist',
+    'build',
+    '*.log',
+    '*.tmp',
+    '.env',
+    '.env.*'
   ]
 };
 
@@ -123,17 +136,47 @@ function encryptFile(filePath, outputPath) {
 
 function compressDirectory(sourceDir, outputPath) {
   return new Promise((resolve, reject) => {
-    const tar = spawn('tar', ['-czf', outputPath, '-C', path.dirname(sourceDir), path.basename(sourceDir)]);
+    // CRITICAL: Exclude node_modules and .pnpm-store from tar archives
+    // This prevents deployment errors and reduces archive size significantly
+    const excludePatterns = [
+      '--exclude=node_modules',
+      '--exclude=.pnpm-store',
+      '--exclude=.cache',
+      '--exclude=*.log',
+      '--exclude=*.tmp',
+      '--exclude=.git',
+      '--exclude=.DS_Store',
+      '--exclude=Thumbs.db'
+    ];
+    
+    const tarArgs = [
+      '-czf',
+      outputPath,
+      '-C',
+      path.dirname(sourceDir),
+      ...excludePatterns,
+      path.basename(sourceDir)
+    ];
+    
+    const tar = spawn('tar', tarArgs);
+    
+    let stderr = '';
+    tar.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
     
     tar.on('close', (code) => {
       if (code === 0) {
+        logSuccess(`Compressed ${sourceDir} (excluding node_modules)`);
         resolve(outputPath);
       } else {
-        reject(new Error(`Compression failed with code ${code}`));
+        reject(new Error(`Compression failed with code ${code}: ${stderr}`));
       }
     });
     
-    tar.on('error', reject);
+    tar.on('error', (err) => {
+      reject(new Error(`Tar process error: ${err.message}`));
+    });
   });
 }
 
