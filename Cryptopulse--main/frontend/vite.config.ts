@@ -5,12 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      // Enable production optimizations
-      babel: {
-        compact: true,
-      },
-    }),
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {

@@ -14,8 +14,8 @@ services:
       corepack enable &&
       echo "Cleaning previous installations..." &&
       rm -rf node_modules .pnpm-store &&
-      echo "Installing dependencies..." &&
-      pnpm install --no-frozen-lockfile &&
+      echo "Installing dependencies with peer deps..." &&
+      pnpm install --no-frozen-lockfile --shamefully-hoist --strict-peer-dependencies=false &&
       echo "Building production bundle..." &&
       pnpm build
     startCommand: node server.cjs
