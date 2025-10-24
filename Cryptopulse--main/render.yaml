@@ -6,18 +6,9 @@ services:
     plan: starter
     autoDeploy: true
     rootDir: Cryptopulse--main/frontend
-    # FIXED: Proper pnpm installation and build process
-    # Uses no-frozen-lockfile for Render compatibility
-    # Cleans node_modules before install to prevent symlink conflicts
-    buildCommand: |
-      echo "Installing pnpm..." &&
-      corepack enable &&
-      echo "Cleaning previous installations..." &&
-      rm -rf node_modules .pnpm-store &&
-      echo "Installing dependencies with peer deps..." &&
-      pnpm install --no-frozen-lockfile --shamefully-hoist --strict-peer-dependencies=false &&
-      echo "Building production bundle..." &&
-      pnpm build
+    # FIXED: Proper pnpm installation with peer dependency resolution
+    # Single line command for better Render compatibility
+    buildCommand: corepack enable && rm -rf node_modules .pnpm-store && pnpm install --no-frozen-lockfile --shamefully-hoist=true --strict-peer-dependencies=false && pnpm build
     startCommand: node server.cjs
     healthCheckPath: /health
     envVars:
