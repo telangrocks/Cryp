@@ -7,15 +7,15 @@ services:
     autoDeploy: true
     rootDir: Cryptopulse--main/frontend
     # FIXED: Proper pnpm installation and build process
-    # Uses frozen lockfile for reproducible builds
+    # Uses no-frozen-lockfile for Render compatibility
     # Cleans node_modules before install to prevent symlink conflicts
     buildCommand: |
       echo "Installing pnpm..." &&
-      npm install -g pnpm@latest &&
+      corepack enable &&
       echo "Cleaning previous installations..." &&
       rm -rf node_modules .pnpm-store &&
-      echo "Installing dependencies with frozen lockfile..." &&
-      pnpm install --frozen-lockfile --prefer-offline &&
+      echo "Installing dependencies..." &&
+      pnpm install --no-frozen-lockfile &&
       echo "Building production bundle..." &&
       pnpm build
     startCommand: node server.cjs
